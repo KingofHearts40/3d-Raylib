@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "raymath.h"
+#include "camera.h"
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -17,6 +18,9 @@ int main(void)
     Model cube = LoadModel("model3d/cube.glb");
     Model robot = LoadModel("model3d/robot.glb");
     Vector3 cube_pos = {0.0f,0.5f, 0.0f};
+
+    Camera custom_cam = Init3dCamera();
+    setCameraTarget(&custom_cam, cube_pos);
 
 
     // Define the camera to look into our 3d world
@@ -92,12 +96,13 @@ int main(void)
             float z = camera.position.z;
             camera.position.y = y * cosf(angle) - z * sinf(angle);
             camera.position.z = y * sinf(angle) + z * cos(angle);
-
         }
+
+        rotateCameraAroundCurrentTarget(&custom_cam);
     
         BeginDrawing();
         ClearBackground(WHITE);
-        BeginMode3D(camera);
+        BeginMode3D(custom_cam);
 
         DrawRay(ray, MAROON);
         DrawGrid(10, 1.0F);
