@@ -1,25 +1,4 @@
-#ifndef CAMERA_H
-#define CAMERA_H
-
-//todo, Function rotateCameraAroundCurrentTarget remove static from the pitch and yaw,
-// but store them in a struct somehow so that they aren't starting at 0
-//tbh, needs an actual struct for whole custom camera so it can store (so far)
-//pitch, yaw, clamp value for x and y axis, maybe variables for zoom, etc
-
-#include "raylib.h"
-#include "raymath.h"
-
-#define LOOK_SENSITIVITY 0.01f
-#define CAMERA_DISTANCE_INIT 5.0f
-
-typedef struct custom_cam3d {
-    Camera3D cam3D;
-    float pitch;
-    float yaw;
-    float clamp_y;
-    float clamp_x;
-    float sensitivity;
-}custom_cam3d;
+#include "camera.h"
 
 //initializes a camera with target world origin, z position -5 to the world origin,
 //up is the y direction, fovy = 45, and projection is perspective
@@ -47,15 +26,19 @@ custom_cam3d Init3dCamera(){
     return camera;
 }
 
+//set camera target to a Vec3 pos, and then moves the camera behind the Z position of the target
 void setCameraTarget(custom_cam3d *camera, Vector3 target){
     camera->cam3D.target = target;
+    camera->cam3D.position = target;
     camera->cam3D.position.z = target.z - CAMERA_DISTANCE_INIT;    
 }
 
+//changes the camera position to supplied Vec3
 void setCameraPosition(custom_cam3d * camera, Vector3 pos){
     camera->cam3D.position = pos;
 }
 
+//function to change fovy
 void setCameraFovy(custom_cam3d *camera, float fovy){
     camera->cam3D.fovy = fovy;
 }
@@ -81,6 +64,7 @@ void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
     camera->cam3D.position.z = camera->cam3D.target.z + distance * cos(camera->yaw) * cos(camera->pitch);
 }
 
+//allows camera to zoom, Clamp values defined in this function
 void zoomCamera(custom_cam3d * camera, float zoom){
     Vector3 forward =  Vector3Subtract(camera->cam3D.position, camera->cam3D.target);
     float distance = Vector3Length(forward);
@@ -92,11 +76,10 @@ void zoomCamera(custom_cam3d * camera, float zoom){
     camera->cam3D.position = new_camera_pos;
 }
 
+//resets the camera to be behind the target's z position, resets pitch and yaw
 void resetCamera(custom_cam3d * camera, Vector3 target){
     camera->cam3D.position = (Vector3){target.x, target.y, target.z - CAMERA_DISTANCE_INIT};
     camera->pitch = 0.0f;
     camera->yaw = 0.0f; 
     camera->cam3D.target = target;
 }
-
-#endif
