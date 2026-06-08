@@ -9,57 +9,94 @@
 #include "raylib.h"
 #include "raymath.h"
 
+#define LOOK_SENSITIVITY 0.01f
+#define CAMERA_DISTANCE_INIT 5.0f
+
+typedef struct custom_cam3d {
+    Camera3D cam3D;
+    float pitch;
+    float yaw;
+    float clamp_y;
+    float clamp_x;
+    float sensitivity;
+}custom_cam3d;
+
 //initializes a camera with target world origin, z position -5 to the world origin,
 //up is the y direction, fovy = 45, and projection is perspective
-Camera3D Init3dCamera(){
+custom_cam3d Init3dCamera(){
 
-    Camera3D camera;
+    custom_cam3d camera;
     Vector3 world_center = {0,0,0};
     
-    camera.position = world_center;
-    camera.target = world_center;
-    camera.position.z - 5;
-    camera.up = (Vector3){0,1,0};
-    camera.fovy = 45;
-    camera.projection = CAMERA_PERSPECTIVE;
+    camera.cam3D.position = world_center;
+    camera.cam3D.target = world_center;
+    camera.cam3D.position.z - CAMERA_DISTANCE_INIT;
+    camera.cam3D.up = (Vector3){0,1,0};
+    camera.cam3D.fovy = 45;
+    camera.cam3D.projection = CAMERA_PERSPECTIVE;
+    camera.pitch = 0.0f;
+    camera.yaw = 0.0f;
+    camera.sensitivity = LOOK_SENSITIVITY;
+
+    float initial_clamp_y = 45.0f * DEG2RAD;
+    float initial_clamp_x = 360.0f * DEG2RAD;
+
+    camera.clamp_x = initial_clamp_x;
+    camera.clamp_y = initial_clamp_y;
 
     return camera;
 }
 
-void setCameraTarget(Camera3D *camera, Vector3 target){
-    camera->target = target;
-    camera->position.z = target.z - 10;    
+void setCameraTarget(custom_cam3d *camera, Vector3 target){
+    camera->cam3D.target = target;
+    camera->cam3D.position.z = target.z - CAMERA_DISTANCE_INIT;    
 }
 
-void setCameraPosition(Camera3D * camera, Vector3 pos){
-    camera->position = pos;
+void setCameraPosition(custom_cam3d * camera, Vector3 pos){
+    camera->cam3D.position = pos;
 }
 
-void setCameraFovy(Camera3D *camera, float fovy){
-    camera->fovy = fovy;
+void setCameraFovy(custom_cam3d *camera, float fovy){
+    camera->cam3D.fovy = fovy;
 }
 
 //uses mouse movement to rotate the camera
-void rotateCameraAroundCurrentTarget(Camera3D * camera){
+void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
 
     Vector2 mouseDelta = GetMouseDelta();
 
-    float distance = Vector3Distance(camera->position, camera->target);
-    static float pitch = 0.0f; //use to rotate around X axis
-    static float yaw = 0.0f;   //use to rotate around Y axis
-    float sensitivity = 0.01f; //mouse movement speed
+    float distance = Vector3Distance(camera->cam3D.position, camera->cam3D.target);
 
-    yaw += mouseDelta.x * sensitivity;
-    pitch += mouseDelta.y *sensitivity;
+    camera->yaw += mouseDelta.x * camera->sensitivity;
+    camera->pitch += mouseDelta.y * camera->sensitivity;
 
-    float clamp_y = 60.0f * DEG2RAD;
+    if (camera->pitch > camera->clamp_y) camera->pitch = camera->clamp_y;
+    if (camera->pitch < -camera->clamp_y) camera->pitch = -camera->clamp_y;
 
-    if (pitch > clamp_y) pitch = clamp_y;
-    if (pitch < -clamp_y) pitch = -clamp_y;
+    if (camera->yaw > camera->clamp_x) camera->yaw = camera->clamp_x;
+    if (camera->yaw < -camera->clamp_x) camera->yaw = -camera->clamp_x;
 
-    camera->position.x = camera->target.x + distance * cos(yaw) * cos(pitch);
-    camera->position.y = camera->target.y + distance * sin(pitch);
-    camera->position.z = camera->target.z + distance * sin(yaw) * cos(pitch);
+    camera->cam3D.position.x = camera->cam3D.target.x + distance * sin(camera->yaw) * cos(camera->pitch);
+    camera->cam3D.position.y = camera->cam3D.target.y + distance * sin(camera->pitch);
+    camera->cam3D.position.z = camera->cam3D.target.z + distance * cos(camera->yaw) * cos(camera->pitch);
+}
+
+void zoomCamera(custom_cam3d * camera, float zoom){
+    Vector3 forward =  Vector3Subtract(camera->cam3D.position, camera->cam3D.target);
+    float distance = Vector3Length(forward);
+
+    distance += zoom;
+    distance = Clamp(distance, 2.0f, 10.0f);
+
+    Vector3 new_camera_pos = Vector3Add(camera->cam3D.target, Vector3Scale(Vector3Normalize(forward), distance));
+    camera->cam3D.position = new_camera_pos;
+}
+
+void resetCamera(custom_cam3d * camera, Vector3 target){
+    camera->cam3D.position = (Vector3){target.x, target.y, target.z - CAMERA_DISTANCE_INIT};
+    camera->pitch = 0.0f;
+    camera->yaw = 0.0f; 
+    camera->cam3D.target = target;
 }
 
 #endif
