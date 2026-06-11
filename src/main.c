@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "camera.h"
+#include "player.h"
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -16,11 +17,12 @@ int main(void)
 
     #define MODELFOLDER "../model3d/"
 
+    player p = InitPlayer(MODELFOLDER "robot.glb", (Vector3){0.0f, 1.75f, 0.0f});
+
     Model floor = LoadModel(MODELFOLDER "floor.glb");
     Model cube = LoadModel(MODELFOLDER "cube.glb");
-    Model robot = LoadModel(MODELFOLDER "robot.glb");
-    Vector3 cube_pos = {0.0f, 1.75f, 0.0f};
-    BoundingBox robot_bbox = GetMeshBoundingBox(robot.meshes[0]);
+ 
+    BoundingBox robot_bbox = GetMeshBoundingBox(p.p_model.meshes[0]);
     float scale = 0.5f;
     robot_bbox.min = Vector3Scale(robot_bbox.min, scale);
     robot_bbox.max = Vector3Scale(robot_bbox.max, scale);
@@ -28,7 +30,7 @@ int main(void)
     robot_bbox.max.y += 1.75f;
 
     custom_cam3d custom_cam = Init3dCamera();
-    setCameraTarget(&custom_cam, cube_pos);
+    setCameraTarget(&custom_cam, p.p_position);
 
     Ray ray = { 0 };       
     float angle = (float)(PI/360);             // Picking line ray
@@ -44,59 +46,23 @@ int main(void)
             ray.position.y +=0.01f;
         }
 
-        if (IsKeyDown(KEY_W)){
-            cube_pos.z += -0.1f;
-            custom_cam.cam3D.position.z += -0.1f;
-            custom_cam.cam3D.target = cube_pos;
-        }
-
-        if (IsKeyDown(KEY_S)){
-            cube_pos.z += +0.1f;
-            custom_cam.cam3D.position.z += +0.1f;
-            custom_cam.cam3D.target = cube_pos;
-        }
-
-        if(IsKeyDown(KEY_A)){
-            cube_pos.x -= 0.1f;
-            custom_cam.cam3D.position.x -= 0.1f;
-            custom_cam.cam3D.target = cube_pos;
-        }
-
-        if(IsKeyDown(KEY_D)){
-            cube_pos.x += 0.1f;
-            custom_cam.cam3D.position.x += 0.1f;       
-            custom_cam.cam3D.target = cube_pos;
-        }
-
-        if(IsKeyDown(KEY_R)){
-            resetCamera(&custom_cam, cube_pos);
-        }
-
-        if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT)){
-            rotateCameraAroundCurrentTarget(&custom_cam);
-        }
-
-        if(GetMouseWheelMove()){
-            float zoom = GetMouseWheelMove() * 0.4;
-            zoomCamera(&custom_cam, zoom);
-
-        }
+        MovePlayer(&p);
+        PlayerCamera3rdPersonControls(&p);
 
         BeginDrawing();
         ClearBackground(WHITE);
-        BeginMode3D(custom_cam.cam3D);
+        BeginMode3D(p.p_camera_3rd_person.cam3D);
 
         DrawRay(ray, MAROON);
-        DrawGrid(10, 1.0F);
         DrawModel(floor, (Vector3){0,0,0}, 1, WHITE);
-        DrawModelEx(robot, cube_pos, (Vector3){0,1,0}, 180.0f,(Vector3){0.5f, 0.5f, 0.5f}, WHITE);
+        DrawModelEx(p.p_model, p.p_position, (Vector3){0,1,0}, 180.0f,(Vector3){0.5f, 0.5f, 0.5f}, WHITE);
         DrawBoundingBox(robot_bbox, RED);
         EndMode3D();
 
         DrawFPS(10, 10);
         DrawText(TextFormat("x pos: %f\n, y pos: %f\n, z pos: %f", 
-            custom_cam.cam3D.position.x, custom_cam.cam3D.position.y, 
-            custom_cam.cam3D.position.z),10, 30, 10, BLACK);
+            p.p_camera_3rd_person.cam3D.position.x, p.p_camera_3rd_person.cam3D.position.y, 
+            p.p_camera_3rd_person.cam3D.position.z),10, 30, 10, BLACK);
         EndDrawing();
         
 
@@ -105,7 +71,7 @@ int main(void)
     //unload from GPU
     UnloadModel(floor);
     UnloadModel(cube);
-    UnloadModel(robot);
+    DestroyPlayer(&p);
     //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------

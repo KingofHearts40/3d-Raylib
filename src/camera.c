@@ -9,7 +9,6 @@ custom_cam3d Init3dCamera(){
     
     camera.cam3D.position = world_center;
     camera.cam3D.target = world_center;
-    camera.cam3D.position.z - CAMERA_DISTANCE_INIT;
     camera.cam3D.up = (Vector3){0,1,0};
     camera.cam3D.fovy = 45;
     camera.cam3D.projection = CAMERA_PERSPECTIVE;
@@ -26,11 +25,9 @@ custom_cam3d Init3dCamera(){
     return camera;
 }
 
-//set camera target to a Vec3 pos, and then moves the camera behind the Z position of the target
+//set camera target to a Vec3 pos
 void setCameraTarget(custom_cam3d *camera, Vector3 target){
-    camera->cam3D.target = target;
-    camera->cam3D.position = target;
-    camera->cam3D.position.z = target.z - CAMERA_DISTANCE_INIT;    
+    camera->cam3D.target = target;   
 }
 
 //changes the camera position to supplied Vec3
@@ -76,10 +73,9 @@ void zoomCamera(custom_cam3d * camera, float zoom){
     camera->cam3D.position = new_camera_pos;
 }
 
-//resets the camera to be behind the target's z position, resets pitch and yaw
+//resets the camera position to target, and resets pitch and yaw to 0
 void resetCamera(custom_cam3d * camera, Vector3 target){
-    camera->cam3D.position = (Vector3){target.x, target.y, target.z - CAMERA_DISTANCE_INIT};
+    setCameraPosition(camera, target);
     camera->pitch = 0.0f;
     camera->yaw = 0.0f; 
-    camera->cam3D.target = target;
 }
