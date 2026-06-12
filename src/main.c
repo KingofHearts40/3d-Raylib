@@ -8,16 +8,22 @@
 //------------------------------------------------------------------------------------
 int main(void)
 {
+
+    GetMonitorWidth(0);
+    GetMonitorHeight(0);
     // Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenHeight = 600;
 
     InitWindow(screenWidth, screenHeight, "raylib [core] example - 3d picking");
+    int new_screen_width = GetMonitorWidth(0) * 0.33f;
+    int new_screen_height = GetMonitorHeight(0) * 0.5f;
+    SetWindowSize(new_screen_width, new_screen_height);
 
     #define MODELFOLDER "../model3d/"
 
-    player p = InitPlayer(MODELFOLDER "robot.glb", (Vector3){0.0f, 1.75f, 0.0f});
+    player p = initPlayer(MODELFOLDER "robot.glb", (Vector3){0.0f, 1.75f, 0.0f});
 
     Model floor = LoadModel(MODELFOLDER "floor.glb");
     Model cube = LoadModel(MODELFOLDER "cube.glb");
@@ -46,8 +52,16 @@ int main(void)
             ray.position.y +=0.01f;
         }
 
-        MovePlayer(&p);
-        PlayerCamera3rdPersonControls(&p);
+        if(IsKeyDown(KEY_Z)){
+            rotatePlayerModelY(&p, 1.0f);
+        }
+
+        if(IsKeyDown(KEY_X)){
+            resetPlayerRotation(&p);
+        }
+
+        movePlayer(&p);
+        playerCamera3rdPersonControls(&p);
 
         BeginDrawing();
         ClearBackground(WHITE);

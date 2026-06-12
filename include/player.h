@@ -12,14 +12,20 @@ KeyboardKey backward_key_1 = KEY_S;
 KeyboardKey left_key_1 = KEY_A;
 KeyboardKey right_key_1 = KEY_D;
 
+const float friction = 10.0f;
+const float Acceleration = 5.0f;
+const float max_speed = 10.0f;
+
 typedef struct player {
     Model p_model;
     Vector3 p_position;
     custom_cam3d p_camera_3rd_person;
+    float p_angleY;
+    Vector3 p_velocity;
 
 } player;
 
-player InitPlayer(const char* model_path, Vector3 position){
+player initPlayer(const char* model_path, Vector3 position){
     player p;
     p.p_model = LoadModel(model_path);
     if(p.p_model.meshCount < 1){
@@ -27,6 +33,8 @@ player InitPlayer(const char* model_path, Vector3 position){
         exit(1);
     }
     p.p_position = position;
+    p.p_angleY = 0.0f;
+    p.p_velocity = (Vector3){0.0f, 0.0f, 0.0f};
 
     p.p_camera_3rd_person = Init3dCamera();
     setCameraTarget(&p.p_camera_3rd_person, p.p_position);
@@ -36,34 +44,51 @@ player InitPlayer(const char* model_path, Vector3 position){
     return p;
 }
 
-void MovePlayer(player *p){
+void movePlayer(player *p){
+
+    float dt = GetFrameTime();
     
     if (IsKeyDown(foward_key_1)){
-            p->p_position.z += -0.1f;
-            p->p_camera_3rd_person.cam3D.position.z += -0.1f;
-            p->p_camera_3rd_person.cam3D.target = p->p_position;
+        p->p_velocity.z += -Acceleration * dt / friction;
+        if(p->p_velocity.z < -max_speed){
+            p->p_velocity.z = -max_speed;
         }
+    }
 
-        if (IsKeyDown(backward_key_1)){
-            p->p_position.z += +0.1f;
-            p->p_camera_3rd_person.cam3D.position.z += +0.1f;
-            p->p_camera_3rd_person.cam3D.target = p->p_position;
+    else if (IsKeyDown(backward_key_1)){
+        p->p_velocity.z += Acceleration * dt / friction;
+        if(p->p_velocity.z > max_speed){
+            p->p_velocity.z = max_speed;
         }
+    }
 
-        if(IsKeyDown(left_key_1)){
-            p->p_position.x -= 0.1f;
-            p->p_camera_3rd_person.cam3D.position.x -= 0.1f;
-            p->p_camera_3rd_person.cam3D.target = p->p_position;
-        }
+    else{
+        p->p_velocity.z /= (1.0f + friction * dt);
 
-        if(IsKeyDown(right_key_1)){
-            p->p_position.x += 0.1f;
-            p->p_camera_3rd_person.cam3D.position.x += 0.1f;
-            p->p_camera_3rd_person.cam3D.target = p->p_position;
+        //set velocity.z to 0 if it's close enough
+        if(fabs(p->p_velocity.z) < 0.01f){
+            p->p_velocity.z = 0.0f;
         }
+    }
+
+    if(IsKeyDown(left_key_1)){
+        p->p_velocity.x = -Acceleration * dt / friction;
+    }
+
+    else if(IsKeyDown(right_key_1)){
+        p->p_velocity.x = Acceleration * dt / friction;
+    }
+    
+    else{
+        p->p_velocity.x = 0.0f;
+    }
+
+        p->p_position = Vector3Add(p->p_position, p->p_velocity);
+        p->p_camera_3rd_person.cam3D.position =Vector3Add(p->p_camera_3rd_person.cam3D.position, p->p_velocity);
+        p->p_camera_3rd_person.cam3D.target = p->p_position;
 }
 
-void PlayerCamera3rdPersonControls(player *p){
+void playerCamera3rdPersonControls(player *p){
 
     if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT)){
         rotateCameraAroundCurrentTarget(&p->p_camera_3rd_person);
@@ -80,6 +105,16 @@ void PlayerCamera3rdPersonControls(player *p){
         float zoom = GetMouseWheelMove() * 0.4;
         zoomCamera(&p->p_camera_3rd_person, zoom);
     }
+}
+
+void rotatePlayerModelY(player *p, float angle){
+    p->p_angleY += angle * DEG2RAD;
+    p->p_model.transform = MatrixRotateY(p->p_angleY);
+}
+
+void resetPlayerRotation(player *p){
+    p->p_angleY = 0.0f;
+    p->p_model.transform = MatrixIdentity();
 }
 
 void DestroyPlayer(player *p){
