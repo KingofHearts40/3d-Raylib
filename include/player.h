@@ -16,6 +16,7 @@ typedef struct player {
     float p_angleY;
     Vector3 p_velocity;
     Vector3 look_dir;
+    bool is_grounded;
 } player;
 
 player initPlayer(const char * model_path, Vector3 position);
