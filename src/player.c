@@ -62,13 +62,14 @@ void moveBoundBoxWithPlayer(player *p, Vector3 delta_pos){
 
 //I need a function that moves the player, camera, boundingbox, etc
 void changePlayerPosition(player *p, Vector3 delta){
-    float distance = Vector3Distance(p->p_camera_3rd_person.cam3D.position, p->p_position);
 
     p->p_position = Vector3Add(p->p_position, delta);    
     moveBoundBoxWithPlayer(p, delta);
 
     p->p_camera_3rd_person.cam3D.target = p->p_position;
     p->p_camera_3rd_person.cam3D.position = Vector3Add(p->p_camera_3rd_person.cam3D.position, delta);
+
+    getMeshCenter(p);
 }
 
 //code to make the mesh player turn towards movement direction
@@ -126,10 +127,10 @@ void movePlayerVectors(player *p){
         p->is_grounded = false;     
     }
 
-    else if(p->bounding_box.min.y <= 0 && !p->is_grounded) {
+    else if((p->bounding_box.min.y - (dt * gravity)) <= 0.3 && !p->is_grounded) {
         p->p_velocity.y = 0;
-        float delta_below_floor = 0.0f - p->bounding_box.min.y;
-        changePlayerPosition(p, (Vector3){0, delta_below_floor, 0});
+        float delta_above_floor = p->bounding_box.min.y;
+        changePlayerPosition(p, (Vector3){0, -delta_above_floor + 0.3, 0});
         p->is_grounded = true;
     }
 
@@ -172,20 +173,26 @@ void resetPlayerRotation(player *p){
 void LockCamera(player *p){
 
     if(IsKeyDown(KEY_KP_1)){
-        p->p_camera_3rd_person.cam3D.position = p->p_position;
-        p->p_camera_3rd_person.cam3D.position.z += 10;    
+        //looked up pitch and yaw to put camera behind player
+        p->p_camera_3rd_person.pitch = 0.0f;
+        p->p_camera_3rd_person.yaw = 0.0f;  
+        rotateCameraAroundCurrentTarget(&p->p_camera_3rd_person);
     }
 
     if(IsKeyDown(KEY_KP_3)){
-        p->p_camera_3rd_person.cam3D.position = p->p_position;
-        p->p_camera_3rd_person.cam3D.position.x += 10;  
+        //pitch and yaw put camera on side of player
+        p->p_camera_3rd_person.pitch = 0.0f;
+        p->p_camera_3rd_person.yaw = 90.0f * DEG2RAD;
+
+        rotateCameraAroundCurrentTarget(&p->p_camera_3rd_person);
     }
 
     if(IsKeyDown(KEY_KP_7)){
-        p->p_camera_3rd_person.cam3D.position = p->p_position;
-        p->p_camera_3rd_person.cam3D.position.y += 10;
-        p->p_camera_3rd_person.cam3D.position.z += 0;
-        p->p_camera_3rd_person.cam3D.target = p->p_position;    
+        //pitch and yaw to put camera above player
+        p->p_camera_3rd_person.pitch = 90.0f *DEG2RAD;
+        p->p_camera_3rd_person.yaw = 0.0f;
+
+        rotateCameraAroundCurrentTarget(&p->p_camera_3rd_person);
     }  
 }
 
