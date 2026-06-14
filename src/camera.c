@@ -16,7 +16,7 @@ custom_cam3d Init3dCamera(){
     camera.yaw = 0.0f;
     camera.sensitivity = LOOK_SENSITIVITY;
 
-    float initial_clamp_y = 45.0f * DEG2RAD;
+    float initial_clamp_y = 90.0f * DEG2RAD;
     float initial_clamp_x = 360.0f * DEG2RAD;
 
     camera.clamp_x = initial_clamp_x;

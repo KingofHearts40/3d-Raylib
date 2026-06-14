@@ -8,7 +8,6 @@
 //------------------------------------------------------------------------------------
 int main(void)
 {
-
     GetMonitorWidth(0);
     GetMonitorHeight(0);
     // Initialization
@@ -28,18 +27,9 @@ int main(void)
     Model floor = LoadModel(MODELFOLDER "floor.glb");
     Model cube = LoadModel(MODELFOLDER "cube.glb");
  
-    BoundingBox robot_bbox = GetMeshBoundingBox(p.p_model.meshes[0]);
-    float scale = 0.5f;
-    robot_bbox.min = Vector3Scale(robot_bbox.min, scale);
-    robot_bbox.max = Vector3Scale(robot_bbox.max, scale);
-    robot_bbox.min.y += 1.75f;
-    robot_bbox.max.y += 1.75f;
-
     custom_cam3d custom_cam = Init3dCamera();
     setCameraTarget(&custom_cam, p.p_position);
 
-    Ray ray = { 0 };       
-    float angle = (float)(PI/360);             // Picking line ray
 
     SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -47,30 +37,21 @@ int main(void)
     // Main game loop
     while (!WindowShouldClose())        // Detect window close button or ESC key
     {
-        if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
-            ray = GetScreenToWorldRay(GetMousePosition(), custom_cam.cam3D);
-            ray.position.y +=0.01f;
-        }
-
-        if(IsKeyDown(KEY_Z)){
-            rotatePlayerModelY(&p, 1.0f);
-        }
-
-        if(IsKeyDown(KEY_X)){
-            resetPlayerRotation(&p);
-        }
-
-        movePlayer(&p);
+        //movePlayer(&p);
+        movePlayerVectors(&p);
         playerCamera3rdPersonControls(&p);
+
+        LockCamera(&p);
 
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode3D(p.p_camera_3rd_person.cam3D);
 
-        DrawRay(ray, MAROON);
         DrawModel(floor, (Vector3){0,0,0}, 1, WHITE);
-        DrawModelEx(p.p_model, p.p_position, (Vector3){0,1,0}, 180.0f,(Vector3){0.5f, 0.5f, 0.5f}, WHITE);
-        DrawBoundingBox(robot_bbox, RED);
+        //DrawModel(p.p_model, p.p_position, 1, RED);
+        DrawModelWires(p.p_model, p.p_position, 1, RED);
+        DrawSphere(p.mesh_center, 0.1, YELLOW);
+        DrawBoundingBox(p.bounding_box, YELLOW);
         EndMode3D();
 
         DrawFPS(10, 10);
@@ -78,7 +59,6 @@ int main(void)
             p.p_camera_3rd_person.cam3D.position.x, p.p_camera_3rd_person.cam3D.position.y, 
             p.p_camera_3rd_person.cam3D.position.z),10, 30, 10, BLACK);
         EndDrawing();
-        
 
     }
 
