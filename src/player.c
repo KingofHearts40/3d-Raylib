@@ -1,5 +1,7 @@
 #include "player.h"
 
+//TODO CREATE a collision system and then finish checkPlayerPositionYisValid function
+
 const float friction = 10.0f;
 const float Acceleration = 5.0f;
 const float max_speed = 5.0f;
@@ -72,6 +74,12 @@ void changePlayerPosition(player *p, Vector3 delta){
     getMeshCenter(p);
 }
 
+void checkPlayerPositionYisValid(player *p, Vector3 delta){
+    //check for collision of boundingbox min with an object
+    float new_min_y = p->bounding_box.min.y + delta.y;
+    //need a collision system to make this code work
+
+}
 //code to make the mesh player turn towards movement direction
 void playerLookDir(player *p, Vector3 v){
     float angle = atan2f(v.x, v.z); //whether needs to be negated, depends on Draw function used

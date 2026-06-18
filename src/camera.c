@@ -15,6 +15,7 @@ custom_cam3d Init3dCamera(){
     camera.pitch = 0.0f;
     camera.yaw = 0.0f;
     camera.sensitivity = LOOK_SENSITIVITY;
+    camera.max_zoom = 10.0f;
 
     float initial_clamp_y = 90.0f * DEG2RAD;
     float initial_clamp_x = 360.0f * DEG2RAD;
@@ -67,7 +68,7 @@ void zoomCamera(custom_cam3d * camera, float zoom){
     float distance = Vector3Length(forward);
 
     distance += zoom;
-    distance = Clamp(distance, 2.0f, 10.0f);
+    distance = Clamp(distance, 2.0f, camera->max_zoom);
 
     Vector3 new_camera_pos = Vector3Add(camera->cam3D.target, Vector3Scale(Vector3Normalize(forward), distance));
     camera->cam3D.position = new_camera_pos;

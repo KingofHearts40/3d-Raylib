@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include "camera.h"
 #include "player.h"
+#include "world_edit.h"
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -30,6 +31,7 @@ int main(void)
     custom_cam3d custom_cam = Init3dCamera();
     setCameraTarget(&custom_cam, p.p_position);
 
+    createTileMap();
 
     SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -41,17 +43,36 @@ int main(void)
         movePlayerVectors(&p);
         playerCamera3rdPersonControls(&p);
 
+        if(IsKeyPressed(KEY_Q)){
+            Ray temp = cameraToMouseRay(p.p_camera_3rd_person.cam3D);
+
+            change_tile_color_if_clicked(&temp);
+        }
+
+        storeDropGLB();
+
+        Ray r = cameraToMouseRay(p.p_camera_3rd_person.cam3D);
+        highlightCurrentTile(&r);
+
+        selectTile(&r);
+        moveSelectedTile();
+
         LockCamera(&p);
+
 
         BeginDrawing();
         ClearBackground(WHITE);
         BeginMode3D(p.p_camera_3rd_person.cam3D);
 
-        DrawModel(floor, (Vector3){0,0,0}, 1, WHITE);
+        //DrawModel(floor, (Vector3){0,0,0}, 1, WHITE);
         //DrawModel(p.p_model, p.p_position, 1, RED);
-        DrawModelWires(p.p_model, p.p_position, 1, RED);
-        DrawSphere(p.mesh_center, 0.1, YELLOW);
-        DrawBoundingBox(p.bounding_box, YELLOW);
+        //DrawModelWires(p.p_model, p.p_position, 1, RED);
+        //DrawSphere(p.mesh_center, 0.1, YELLOW);
+        //DrawBoundingBox(p.bounding_box, YELLOW);
+        //drawFloorGridMap();
+        drawTileMap();
+        displaySavedModels();
+
         EndMode3D();
 
         DrawFPS(10, 10);

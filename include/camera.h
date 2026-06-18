@@ -19,6 +19,7 @@ typedef struct custom_cam3d {
     float clamp_y;
     float clamp_x;
     float sensitivity;
+    float max_zoom;
 }custom_cam3d;
 
 
