@@ -10,9 +10,39 @@ struct floor_tile {
     BoundingBox bounding_box;
 };
 
+typedef struct gameObject{
+    Model model;
+    BoundingBox bbox;
+    Vector3 pos;
+    Color bbox_color;
+    bool bbox_draw;
+}gameObject;
+
+extern const Vector3 VectorUp;
+extern const Vector3 VectorDown;
+extern const Vector3 VectorLeft;
+extern const Vector3 VectorRight;
+extern const Vector3 VectorForward;
+extern const Vector3 VectorBackward;
+
+// const Vector3 VectorUp = {0.0f, 1.0f, 0.0f};
+// const Vector3 VectorDown = {0.0f, -1.0f, 0.0f};
+// const Vector3 VectorLeft = {1.0f, 0.0f, 0.0f};
+// const Vector3 VectorRight = {-1.0f, 0.0f, 0.0f};
+// const Vector3 VectorForward = {0.0f, 0.0f, -1.0f};
+// const Vector3 VectorBack = {0.0f, 0.0f, 1.0f};
+
 Model model_list[400];
 int current_model = 0;
 int max_models = 400;
+
+#define MAXGAMEOBJECTS 400
+const int max_game_obj = MAXGAMEOBJECTS;
+gameObject game_object_storage[MAXGAMEOBJECTS];
+int current_num_game_obj = 0;
+gameObject *active_game_object = NULL;
+
+#undef MAXGAMEOBJECTS
 
 //code needed for the floor tile experiment
 struct floor_tile floor_test[400];
@@ -42,6 +72,162 @@ bool isPositionInRange(Ray r, Vector3 target, float distance){
    bool inRange = (distance > Vector3Distance(r.position, target)) ? true : false;
    return inRange;
 }
+
+//initializes game object to be in center of the world, get a boundingbox for it
+//intializes color of the bbox to be black and by default draws the bbox
+gameObject initGameObject(Model *m){
+    gameObject g;
+    g.model = *m;
+    g.pos =(Vector3){0,0,0};
+    g.bbox = GetModelBoundingBox(g.model);
+    g.bbox_color = BLACK;
+    g.bbox_draw = true;
+
+    return g;
+}
+
+//get a ray perpendicular to ray from camera to gameObjects
+Ray getPerpendicularRay(Camera3D *c, gameObject *g){
+    Ray r = getRayBetweenPoints(c->position, g->pos);
+
+    Vector3 perpendicularDir = Vector3CrossProduct(r.direction, VectorUp);
+    perpendicularDir = Vector3Normalize(perpendicularDir);
+
+    Ray perpRay;
+    perpRay.position = g->pos;
+    perpRay.direction = perpendicularDir;
+
+    return perpRay;
+}
+
+//get Ray perpendicular from the camera to the selected object
+Ray getRayPerpendicularToActiveObject(Camera3D *c){
+    if(active_game_object){
+        Ray r = getPerpendicularRay(c, active_game_object);
+        return r;
+    }
+}
+
+//updates gameObjects model and bbox positions to provided Vector3
+void updateGameObjectPos(gameObject *g, Vector3 new_pos){
+    Vector3 last_pos = g->pos;
+    
+    //update player position to the provided Vec3
+    g->pos = new_pos;
+
+    //get the change in player position an add it to the boundingBox
+    Vector3 delta_pos = Vector3Subtract(new_pos, last_pos);
+    g->bbox.max = Vector3Add(g->bbox.max, delta_pos);
+    g->bbox.min = Vector3Add(g->bbox.min, delta_pos);
+}
+
+//draws all the objects in the game_object_storage array and their boundingboxes
+void drawGameObjects(){
+    for(int i = 0; i < current_num_game_obj; i++){
+        DrawModel(game_object_storage[i].model, game_object_storage[i].pos, 1.0f, WHITE);
+
+        if(game_object_storage[i].bbox_draw){
+            DrawBoundingBox(game_object_storage[i].bbox, game_object_storage[i].bbox_color);
+        }
+    }
+}
+
+void unloadGameObjects(){
+    for(int i = 0; i < current_num_game_obj; i++){
+        UnloadModel(game_object_storage[i].model);
+    }    
+}
+
+void testMoveSelectedGameObj(){
+
+    if(!active_game_object) return; //null pointer case, avoids crash
+
+    if(IsKeyPressed(KEY_LEFT)){
+        Vector3 new_pos = Vector3Add(active_game_object->pos, VectorLeft);
+        updateGameObjectPos(active_game_object, new_pos);
+    }
+
+    if(IsKeyPressed(KEY_RIGHT)){
+    Vector3 new_pos = Vector3Add(active_game_object->pos, VectorRight);
+    updateGameObjectPos(active_game_object, new_pos);
+    }
+}
+
+//select the closest gameObject to the camera
+void selectGameObject(Camera3D c){
+    //basic flow: create a ray from camera to mouseclick and Raycollision
+    //deselect previous gameobject since the mousebutton was clicked
+    //check for a hit with all objects in the game_object_storage
+    //if hit and nothing previously selected store in the active_game_object ptr
+    //otherwise pick the closest object to the camera
+    //change bbox color to red to make it clear which object is selected
+
+    Ray r = cameraToMouseRay(c);
+    RayCollision rcol;
+
+    deselectGameObject();
+
+    for(int i = 0; i <current_num_game_obj; i++){
+        //check for collision between ray and object
+        rcol = GetRayCollisionBox(r, game_object_storage[i].bbox);
+
+        if(rcol.hit){
+            //if pointer is NULL we store this object in the active_game_object pointer
+            //otherwise we need to compare if current object is closer than what the pointer
+            //already has
+            if(active_game_object == NULL) active_game_object = &game_object_storage[i];
+
+            else{
+                if(rcol.distance < Vector3Distance(r.position, active_game_object->pos)){
+                    active_game_object = &game_object_storage[i];
+                }
+            }
+        }
+    }
+
+    if(active_game_object){
+        active_game_object->bbox_color = RED;
+        }
+}
+
+//deselects the previously active game object
+void deselectGameObject(){
+    if(active_game_object){
+        active_game_object->bbox_color = BLACK; //default color
+        active_game_object = NULL;
+    }
+}
+
+//gets a dropped GLB and stores it in the array for gameobjects
+//currently set to only work with 1 file at a time
+void storeGLBasGameObject(){
+    if(IsFileDropped()){
+        FilePathList droppedFile = LoadDroppedFiles();
+        
+        //exit function if not the right file type
+        if(!IsFileExtension(droppedFile.paths[0], ".glb")){
+            printf("dropped file %s is not a .glb", droppedFile.paths[0]);
+            UnloadDroppedFiles(droppedFile);            
+            return;
+        }
+
+        //if the array is maxed out, avoids array overflow
+        if(current_num_game_obj >= max_game_obj){
+            printf("No storage room left for new models");
+            return;
+        }
+
+        if(droppedFile.count == 1){
+            Model m = LoadModel(droppedFile.paths[0]);
+            gameObject g = initGameObject(&m);
+            game_object_storage[current_num_game_obj] = g;
+            current_num_game_obj++;
+        }
+
+        UnloadDroppedFiles(droppedFile);
+    }
+}
+
 
 //function to store a single drag and Dropped GLB file onto the program
 //requires 3 variables exist, the array, a placeholder for current open spot
