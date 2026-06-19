@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include <stdio.h>
 #include "world_edit.h"
+#include "global_constants.h"
 
 struct floor_tile {
     Vector3 pos;
@@ -17,20 +18,6 @@ typedef struct gameObject{
     Color bbox_color;
     bool bbox_draw;
 }gameObject;
-
-extern const Vector3 VectorUp;
-extern const Vector3 VectorDown;
-extern const Vector3 VectorLeft;
-extern const Vector3 VectorRight;
-extern const Vector3 VectorForward;
-extern const Vector3 VectorBackward;
-
-// const Vector3 VectorUp = {0.0f, 1.0f, 0.0f};
-// const Vector3 VectorDown = {0.0f, -1.0f, 0.0f};
-// const Vector3 VectorLeft = {1.0f, 0.0f, 0.0f};
-// const Vector3 VectorRight = {-1.0f, 0.0f, 0.0f};
-// const Vector3 VectorForward = {0.0f, 0.0f, -1.0f};
-// const Vector3 VectorBack = {0.0f, 0.0f, 1.0f};
 
 Model model_list[400];
 int current_model = 0;

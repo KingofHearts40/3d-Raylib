@@ -17,7 +17,7 @@ custom_cam3d Init3dCamera(){
     camera.sensitivity = LOOK_SENSITIVITY;
     camera.max_zoom = 10.0f;
 
-    float initial_clamp_y = 90.0f * DEG2RAD;
+    float initial_clamp_y = 89.0f * DEG2RAD;
     float initial_clamp_x = 360.0f * DEG2RAD;
 
     camera.clamp_x = initial_clamp_x;
@@ -48,7 +48,7 @@ void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
 
     float distance = Vector3Distance(camera->cam3D.position, camera->cam3D.target);
 
-    camera->yaw += mouseDelta.x * camera->sensitivity;
+    camera->yaw += -mouseDelta.x * camera->sensitivity;
     camera->pitch += mouseDelta.y * camera->sensitivity;
 
     if (camera->pitch > camera->clamp_y) camera->pitch = camera->clamp_y;
@@ -57,9 +57,13 @@ void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
     if (camera->yaw > camera->clamp_x) camera->yaw = camera->clamp_x;
     if (camera->yaw < -camera->clamp_x) camera->yaw = -camera->clamp_x;
 
-    camera->cam3D.position.x = camera->cam3D.target.x + distance * sin(camera->yaw) * cos(camera->pitch);
-    camera->cam3D.position.y = camera->cam3D.target.y + distance * sin(camera->pitch);
-    camera->cam3D.position.z = camera->cam3D.target.z + distance * cos(camera->yaw) * cos(camera->pitch);
+    camera->cam3D.position.x = camera->cam3D.target.x + distance * sinf(camera->yaw) * cosf(camera->pitch);
+    camera->cam3D.position.y = camera->cam3D.target.y + distance * sinf(camera->pitch);
+    camera->cam3D.position.z = camera->cam3D.target.z + distance * cosf(camera->yaw) * cosf(camera->pitch);
+
+    camera->cam3D.up.x = -sinf(camera->pitch) * sinf(camera->yaw);
+    camera->cam3D.up.y = cosf(camera->pitch);
+    camera->cam3D.up.z = -sinf(camera->pitch) * cosf(camera->yaw);
 }
 
 //allows camera to zoom, Clamp values defined in this function

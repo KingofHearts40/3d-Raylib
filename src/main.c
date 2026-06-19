@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "player.h"
 #include "world_edit.h"
+#include "global_constants.h"
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -23,15 +24,13 @@ int main(void)
 
     #define MODELFOLDER "../model3d/"
 
-    player p = initPlayer(MODELFOLDER "robot.glb", (Vector3){0.0f, 1.75f, 0.0f});
+    Model cube = LoadModel(MODELFOLDER "cube.glb");
 
-    custom_cam3d custom_cam = Init3dCamera();
-    setCameraTarget(&custom_cam, p.p_position);
 
-    createTileMap();
+    custom_cam3d world_camera = Init3dCamera();
+    setCameraPosition(&world_camera, (Vector3){0.0f, 0.0f, 5.0f});
 
-    Ray r;
-
+    
     SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
@@ -39,44 +38,45 @@ int main(void)
     while (!WindowShouldClose())        // Detect window close button or ESC key
     {
         //movePlayer(&p);
-        movePlayerVectors(&p);
-        playerCamera3rdPersonControls(&p);
-        LockCamera(&p);
+        // movePlayerVectors(&p);
+        // playerCamera3rdPersonControls(&p);
+        // LockCamera(&p);
 
         //gameobject code testing
         storeGLBasGameObject();
         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-            selectGameObject(p.p_camera_3rd_person.cam3D);
+            selectGameObject(world_camera.cam3D);
         }
         testMoveSelectedGameObj();
 
-        r = getRayPerpendicularToActiveObject(&p.p_camera_3rd_person.cam3D);
+        Vector3 camera_up = world_camera.cam3D.up;
+        if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){
+            rotateCameraAroundCurrentTarget(&world_camera);
+        }
 
 
         BeginDrawing();
         ClearBackground(WHITE);
-        BeginMode3D(p.p_camera_3rd_person.cam3D);
+        BeginMode3D(world_camera.cam3D);
 
         
-        drawGameObjects();
-
-        DrawRay(r, RED);
-        
+        drawGameObjects();    
+        DrawModel(cube, WorldCenter, 1, WHITE); 
 
         EndMode3D();
 
-
-
         DrawFPS(10, 10);
         DrawText(TextFormat("x pos: %f\n, y pos: %f\n, z pos: %f", 
-            p.p_camera_3rd_person.cam3D.position.x, p.p_camera_3rd_person.cam3D.position.y, 
-            p.p_camera_3rd_person.cam3D.position.z),10, 30, 10, BLACK);
+            world_camera.cam3D.position.x, world_camera.cam3D.position.y, 
+            world_camera.cam3D.position.z),10, 30, 10, BLACK);
+
+        DrawText(TextFormat("Camera Up x pos: %f\n, y pos: %f\n, z pos: %f", camera_up.x, 
+            camera_up.y, camera_up.z), 10, 70, 10, BLACK);
         EndDrawing();
 
     }
 
     //unload from GPU
-    DestroyPlayer(&p);
     unloadGameObjects();
     //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
