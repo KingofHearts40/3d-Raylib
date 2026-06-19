@@ -50,8 +50,16 @@ int main(void)
         testMoveSelectedGameObj();
 
         Vector3 camera_up = world_camera.cam3D.up;
-        if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){
+        if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) && !IsKeyDown(KEY_LEFT_SHIFT)){
             rotateCameraAroundCurrentTarget(&world_camera);
+        }
+
+        if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) && IsKeyDown(KEY_LEFT_SHIFT)){
+            Vector2 delta_mouse = GetMouseDelta();
+            delta_mouse.y = delta_mouse.y  *GetFrameTime() / 3.0f;
+            Vector3 change_pos_y = Vector3Scale(world_camera.cam3D.up, delta_mouse.y);
+            world_camera.cam3D.position = Vector3Add(world_camera.cam3D.position,change_pos_y);
+            world_camera.cam3D.target = Vector3Add(world_camera.cam3D.target, change_pos_y);
         }
 
 
