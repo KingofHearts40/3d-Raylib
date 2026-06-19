@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "camera.h"
 #include <stdio.h>
 
 typedef struct gameObject{

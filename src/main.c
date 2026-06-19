@@ -55,11 +55,7 @@ int main(void)
         }
 
         if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) && IsKeyDown(KEY_LEFT_SHIFT)){
-            Vector2 delta_mouse = GetMouseDelta();
-            delta_mouse.y = delta_mouse.y  *GetFrameTime() / 3.0f;
-            Vector3 change_pos_y = Vector3Scale(world_camera.cam3D.up, delta_mouse.y);
-            world_camera.cam3D.position = Vector3Add(world_camera.cam3D.position,change_pos_y);
-            world_camera.cam3D.target = Vector3Add(world_camera.cam3D.target, change_pos_y);
+            MoveCameraPos(&world_camera);
         }
 
 

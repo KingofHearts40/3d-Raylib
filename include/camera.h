@@ -28,7 +28,9 @@ void setCameraTarget(custom_cam3d *camera, Vector3 target);
 void setCameraPosition(custom_cam3d * camera, Vector3 pos);
 void setCameraFovy(custom_cam3d *camera, float fovy);
 void rotateCameraAroundCurrentTarget(custom_cam3d * camera);
-void zoomCamera(custom_cam3d * camera, float zoom);
+void MoveCameraPos(custom_cam3d *c);
+Vector3 getCameraDirectionX(custom_cam3d *c);
+void zoomCamera(custom_cam3d *camera, float zoom);
 void resetCamera(custom_cam3d * camera, Vector3 target);
 
 #endif

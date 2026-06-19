@@ -4,20 +4,20 @@
 #include "world_edit.h"
 #include "global_constants.h"
 
-struct floor_tile {
-    Vector3 pos;
-    Model model;
-    Color color;
-    BoundingBox bounding_box;
-};
+// struct floor_tile {
+//     Vector3 pos;
+//     Model model;
+//     Color color;
+//     BoundingBox bounding_box;
+// };
 
-typedef struct gameObject{
-    Model model;
-    BoundingBox bbox;
-    Vector3 pos;
-    Color bbox_color;
-    bool bbox_draw;
-}gameObject;
+// typedef struct gameObject{
+//     Model model;
+//     BoundingBox bbox;
+//     Vector3 pos;
+//     Color bbox_color;
+//     bool bbox_draw;
+// }gameObject;
 
 Model model_list[400];
 int current_model = 0;
@@ -139,6 +139,8 @@ void testMoveSelectedGameObj(){
     updateGameObjectPos(active_game_object, new_pos);
     }
 }
+
+
 
 //select the closest gameObject to the camera
 void selectGameObject(Camera3D c){

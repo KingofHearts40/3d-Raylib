@@ -66,6 +66,43 @@ void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
     camera->cam3D.up.z = -sinf(camera->pitch) * cosf(camera->yaw);
 }
 
+//code to move camera around the world
+void MoveCameraPos(custom_cam3d *c){
+    Vector2 delta_mouse = GetMouseDelta();
+    //play around with this constant later
+    delta_mouse.y = delta_mouse.y  *GetFrameTime() / 3.0f;
+
+    //scale thhe up position by delta_mouse.y and then add it to both the position
+    //and target to move the camera while keeping it looking in the same direction
+    Vector3 change_pos_y = Vector3Scale(c->cam3D.up, delta_mouse.y);
+    c->cam3D.position = Vector3Add(c->cam3D.position,change_pos_y);
+    c->cam3D.target = Vector3Add(c->cam3D.target, change_pos_y);
+
+    Vector3 camera_x_axis_vector = getCameraDirectionX(c);
+    float delta_x = -delta_mouse.x * GetFrameTime() / 3.0f; //negative needed to move correct direction
+    
+    Vector3 change_pos_x = Vector3Scale(camera_x_axis_vector, delta_x);
+    c->cam3D.position = Vector3Add(c->cam3D.position, change_pos_x);
+    c->cam3D.target = Vector3Add(c->cam3D.target, change_pos_x);
+}
+
+//get the vector direction coresponding to the screen's x axis
+Vector3 getCameraDirectionX(custom_cam3d *c){
+    Vector3 screen_direction_y = c->cam3D.up;
+    screen_direction_y = Vector3Normalize(screen_direction_y);
+    //get the z direction vector which is into the screen, this is not world space
+    //remember that we are trying to convert 2D x and y movement to 3d space, so the "z"
+    //direction is always into the screen, but depending on camera orientation
+    //x y and z of "screen space" probably != to world space counterparts
+    Vector3 screen_direction_z = Vector3Subtract(c->cam3D.position, c->cam3D.target);
+    screen_direction_z = Vector3Normalize(screen_direction_z);
+
+    Vector3 direction_x = Vector3CrossProduct(screen_direction_y, screen_direction_z);
+    direction_x = Vector3Normalize(direction_x);
+    
+    return direction_x;
+}
+
 //allows camera to zoom, Clamp values defined in this function
 void zoomCamera(custom_cam3d * camera, float zoom){
     Vector3 forward =  Vector3Subtract(camera->cam3D.position, camera->cam3D.target);
