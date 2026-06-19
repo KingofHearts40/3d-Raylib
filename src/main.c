@@ -61,7 +61,7 @@ int main(void)
 
         
         drawGameObjects();    
-        DrawModel(cube, WorldCenter, 1, WHITE); 
+        DrawModel(cube, WorldCenter, 1, WHITE);  
 
         EndMode3D();
 
