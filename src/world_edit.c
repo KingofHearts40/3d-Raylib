@@ -140,6 +140,28 @@ void testMoveSelectedGameObj(){
     }
 }
 
+void testMouseMoveSelectedGameObj(custom_cam3d *c){
+    if(!active_game_object) return;
+
+    float distance = Vector3Distance(c->cam3D.position, active_game_object->pos);
+
+    if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+        Vector2 delta_mouse = GetMouseDelta();
+        float delta_x = delta_mouse.x * GetFrameTime() * distance / 10;
+        float delta_y = delta_mouse.y * GetFrameTime() * distance / 10;
+
+        //change in float mouse position conversion to a delta Vector3
+        Vector3 change_pos_x = Vector3Scale(c->x_axis, delta_x);
+        Vector3 change_pos_y = Vector3Scale(c->cam3D.up, delta_y);
+
+        Vector3 new_pos;
+
+        new_pos = Vector3Add(active_game_object->pos, change_pos_x);
+        new_pos = Vector3Subtract(new_pos, change_pos_y);
+        updateGameObjectPos(active_game_object, new_pos);
+    }
+}
+
 
 
 //select the closest gameObject to the camera

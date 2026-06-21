@@ -44,12 +44,14 @@ int main(void)
 
         //gameobject code testing
         storeGLBasGameObject();
+        
         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             selectGameObject(world_camera.cam3D);
         }
-        testMoveSelectedGameObj();
-
+        
         Vector3 camera_up = world_camera.cam3D.up;
+        Vector3 camera_right = world_camera.x_axis;
+
         if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) && !IsKeyDown(KEY_LEFT_SHIFT)){
             rotateCameraAroundCurrentTarget(&world_camera);
         }
@@ -57,6 +59,8 @@ int main(void)
         if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) && IsKeyDown(KEY_LEFT_SHIFT)){
             MoveCameraPos(&world_camera);
         }
+
+        testMouseMoveSelectedGameObj(&world_camera);
 
 
         BeginDrawing();

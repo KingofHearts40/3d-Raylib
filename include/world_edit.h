@@ -34,6 +34,7 @@ Ray getRayPerpendicularToActiveObject(Camera3D *c);
 gameObject initGameObject(Model *m);
 void updateGameObjectPos(gameObject *g, Vector3 new_pos);
 void testMoveSelectedGameObj();
+void testMouseMoveSelectedGameObj(custom_cam3d *c);
 
 //select and deselect objects
 

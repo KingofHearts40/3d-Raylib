@@ -9,7 +9,8 @@ custom_cam3d Init3dCamera(){
     
     camera.cam3D.position = world_center;
     camera.cam3D.target = world_center;
-    camera.cam3D.up = (Vector3){0,1,0};
+    camera.cam3D.up = VectorUp;
+    camera.x_axis = VectorRight;
     camera.cam3D.fovy = 45;
     camera.cam3D.projection = CAMERA_PERSPECTIVE;
     camera.pitch = 0.0f;
@@ -64,6 +65,8 @@ void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
     camera->cam3D.up.x = -sinf(camera->pitch) * sinf(camera->yaw);
     camera->cam3D.up.y = cosf(camera->pitch);
     camera->cam3D.up.z = -sinf(camera->pitch) * cosf(camera->yaw);
+
+    camera->x_axis = getCameraDirectionX(camera);
 }
 
 //code to move camera around the world
@@ -72,13 +75,14 @@ void MoveCameraPos(custom_cam3d *c){
     //play around with this constant later
     delta_mouse.y = delta_mouse.y  *GetFrameTime() / 3.0f;
 
-    //scale thhe up position by delta_mouse.y and then add it to both the position
+    //scale the up position by delta_mouse.y and then add it to both the position
     //and target to move the camera while keeping it looking in the same direction
     Vector3 change_pos_y = Vector3Scale(c->cam3D.up, delta_mouse.y);
     c->cam3D.position = Vector3Add(c->cam3D.position,change_pos_y);
     c->cam3D.target = Vector3Add(c->cam3D.target, change_pos_y);
 
     Vector3 camera_x_axis_vector = getCameraDirectionX(c);
+    c->x_axis = camera_x_axis_vector;
     float delta_x = -delta_mouse.x * GetFrameTime() / 3.0f; //negative needed to move correct direction
     
     Vector3 change_pos_x = Vector3Scale(camera_x_axis_vector, delta_x);

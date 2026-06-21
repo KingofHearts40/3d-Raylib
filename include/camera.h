@@ -8,6 +8,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "global_constants.h"
 
 #define LOOK_SENSITIVITY 0.01f
 #define CAMERA_DISTANCE_INIT 5.0f
@@ -20,6 +21,7 @@ typedef struct custom_cam3d {
     float clamp_x;
     float sensitivity;
     float max_zoom;
+    Vector3 x_axis;
 }custom_cam3d;
 
 
