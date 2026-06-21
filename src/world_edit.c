@@ -110,21 +110,6 @@ void unloadGameObjects(){
     }    
 }
 
-void testMoveSelectedGameObj(){
-
-    if(!active_game_object) return; //null pointer case, avoids crash
-
-    if(IsKeyPressed(KEY_LEFT)){
-        Vector3 new_pos = Vector3Add(active_game_object->pos, VectorLeft);
-        updateGameObjectPos(active_game_object, new_pos);
-    }
-
-    if(IsKeyPressed(KEY_RIGHT)){
-    Vector3 new_pos = Vector3Add(active_game_object->pos, VectorRight);
-    updateGameObjectPos(active_game_object, new_pos);
-    }
-}
-
 void MouseMoveSelectedGameObj(custom_cam3d *c){
     if(!active_game_object) return;
 
