@@ -4,21 +4,6 @@
 #include "world_edit.h"
 #include "global_constants.h"
 
-// struct floor_tile {
-//     Vector3 pos;
-//     Model model;
-//     Color color;
-//     BoundingBox bounding_box;
-// };
-
-// typedef struct gameObject{
-//     Model model;
-//     BoundingBox bbox;
-//     Vector3 pos;
-//     Color bbox_color;
-//     bool bbox_draw;
-// }gameObject;
-
 Model model_list[400];
 int current_model = 0;
 int max_models = 400;
@@ -140,28 +125,31 @@ void testMoveSelectedGameObj(){
     }
 }
 
-void testMouseMoveSelectedGameObj(custom_cam3d *c){
+void MouseMoveSelectedGameObj(custom_cam3d *c){
     if(!active_game_object) return;
+
+    float screenHeight = GetScreenHeight();
 
     float distance = Vector3Distance(c->cam3D.position, active_game_object->pos);
 
-    if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
-        Vector2 delta_mouse = GetMouseDelta();
-        float delta_x = delta_mouse.x * GetFrameTime() * distance / 10;
-        float delta_y = delta_mouse.y * GetFrameTime() * distance / 10;
+    //math to convert pixels on screen to world space at the disance the active ob is from camera
+    float world_height_at_distance = 2.0f * distance * tanf(c->cam3D.fovy*DEG2RAD/2.0f);
+    float pixel_to_world_scale = world_height_at_distance / screenHeight;
 
-        //change in float mouse position conversion to a delta Vector3
-        Vector3 change_pos_x = Vector3Scale(c->x_axis, delta_x);
-        Vector3 change_pos_y = Vector3Scale(c->cam3D.up, delta_y);
+    Vector2 delta_mouse = GetMouseDelta();
+    float delta_x = delta_mouse.x * pixel_to_world_scale;
+    float delta_y = delta_mouse.y * pixel_to_world_scale;
 
-        Vector3 new_pos;
+    //change in float mouse position conversion to a delta Vector3
+    Vector3 change_pos_x = Vector3Scale(c->x_axis, delta_x);
+    Vector3 change_pos_y = Vector3Scale(c->cam3D.up, delta_y);
 
-        new_pos = Vector3Add(active_game_object->pos, change_pos_x);
-        new_pos = Vector3Subtract(new_pos, change_pos_y);
-        updateGameObjectPos(active_game_object, new_pos);
-    }
+    Vector3 new_pos;
+
+    new_pos = Vector3Add(active_game_object->pos, change_pos_x);
+    new_pos = Vector3Subtract(new_pos, change_pos_y);
+    updateGameObjectPos(active_game_object, new_pos);
 }
-
 
 
 //select the closest gameObject to the camera

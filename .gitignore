@@ -1,3 +1,6 @@
 /.vscode
 main
 main.exe
+/build
+CMakeLists.txt
+.gitignore

@@ -5,6 +5,12 @@
 #include "world_edit.h"
 #include "global_constants.h"
 
+enum edit_mode_states{
+    IDLE,
+    MOVE_OBJECT
+};
+
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -29,6 +35,8 @@ int main(void)
 
     custom_cam3d world_camera = Init3dCamera();
     setCameraPosition(&world_camera, (Vector3){0.0f, 0.0f, 5.0f});
+
+    enum edit_mode_states edit_mode = IDLE;
 
     
     SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
@@ -60,8 +68,17 @@ int main(void)
             MoveCameraPos(&world_camera);
         }
 
-        testMouseMoveSelectedGameObj(&world_camera);
-
+        if (IsKeyPressed(KEY_G)){
+            edit_mode = MOVE_OBJECT;
+        }
+        if(edit_mode == MOVE_OBJECT){
+            MouseMoveSelectedGameObj(&world_camera);
+            
+            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                edit_mode = IDLE;
+            }
+        }
 
         BeginDrawing();
         ClearBackground(WHITE);
