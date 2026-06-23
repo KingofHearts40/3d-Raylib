@@ -4,3 +4,8 @@ main.exe
 /build
 CMakeLists.txt
 .gitignore
+model3d/humanoid.blend
+.gitignore
+.gitignore
+model3d/humanoid.glb
+model3d/humanoid.blend1

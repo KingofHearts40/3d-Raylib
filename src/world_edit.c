@@ -4,6 +4,18 @@
 #include "world_edit.h"
 #include "global_constants.h"
 
+typedef struct gameObject{
+    int model_num;
+    BoundingBox bbox;
+    Vector3 pos;
+    Color bbox_color;
+    bool bbox_draw;
+    int anim_count;
+    Model model;
+    ModelAnimation *animations;
+}gameObject;
+
+
 Model model_list[400];
 int current_model = 0;
 int max_models = 400;
@@ -19,6 +31,11 @@ gameObject *active_game_object = NULL;
 //code needed for the floor tile experiment
 struct floor_tile floor_test[400];
 int active_tile = -1;
+
+//first attempt at serializing my game_objects
+void write_game_obj_file(){
+
+}
 
 //allow a ray to be cast between any two points
 Ray getRayBetweenPoints(Vector3 start, Vector3 end){
@@ -204,12 +221,37 @@ void storeGLBasGameObject(){
         if(droppedFile.count == 1){
             Model m = LoadModel(droppedFile.paths[0]);
             gameObject g = initGameObject(&m);
+            g.animations = LoadModelAnimations(droppedFile.paths[0], &g.anim_count);
+
+            
             game_object_storage[current_num_game_obj] = g;
             current_num_game_obj++;
         }
 
         UnloadDroppedFiles(droppedFile);
     }
+}
+
+void playActiveObjectAnim(int *current_frame, int *animation_num){
+    if (active_game_object == NULL || active_game_object->anim_count == 0) return;
+
+    if ((*animation_num) >= active_game_object->anim_count) (*animation_num) = 0;
+    int anim = *animation_num;
+    int max_frame_count = active_game_object->animations[anim].keyframeCount;
+    
+    UpdateModelAnimation(active_game_object->model, active_game_object->animations[anim], *current_frame);
+    (*current_frame)++;
+
+    if ((*current_frame) >= max_frame_count) (*current_frame) = 0; //reset the indx if reached final anim
+}
+
+char * activeAnimationName(int * anim_num){
+    if(!active_game_object) return "NULL";
+    if ((*anim_num) >= active_game_object->anim_count) (*anim_num) = 0;
+
+    char * name = active_game_object->animations[*anim_num].name;
+
+    return name;
 }
 
 

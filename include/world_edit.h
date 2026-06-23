@@ -6,13 +6,18 @@
 #include "camera.h"
 #include <stdio.h>
 
-typedef struct gameObject{
-    Model model;
-    BoundingBox bbox;
-    Vector3 pos;
-    Color bbox_color;
-    bool bbox_draw;
-}gameObject;
+typedef struct gameObject gameObject;
+
+// typedef struct gameObject{
+//     int model_num;
+//     BoundingBox bbox;
+//     Vector3 pos;
+//     Color bbox_color;
+//     bool bbox_draw;
+//     int anim_count;
+//     Model model;
+//     ModelAnimation *animations;
+// }gameObject;
 
 struct floor_tile {
     Vector3 pos;
@@ -20,6 +25,7 @@ struct floor_tile {
     Color color;
     BoundingBox bounding_box;
 };
+
 
 //raycast related functions
 
@@ -34,6 +40,10 @@ Ray getRayPerpendicularToActiveObject(Camera3D *c);
 gameObject initGameObject(Model *m);
 void updateGameObjectPos(gameObject *g, Vector3 new_pos);
 void MouseMoveSelectedGameObj(custom_cam3d *c);
+
+//animation related functions
+void playActiveObjectAnim(int *current_frame, int *animation_num);
+char * activeAnimationName(int * anim_num);
 
 //select and deselect objects
 
