@@ -7,5 +7,6 @@ int empty_main();
 int edit_mode_main();
 int test_viewport_ui_main();
 int test_viewport_main();
+int refactor_main();
 
 #endif

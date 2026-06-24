@@ -95,7 +95,7 @@ Vector3 getCameraDirectionX(custom_cam3d *c){
     Vector3 screen_direction_y = c->cam3D.up;
     screen_direction_y = Vector3Normalize(screen_direction_y);
     //get the z direction vector which is into the screen, this is not world space
-    //remember that we are trying to convert 2D x and y movement to 3d space, so the "z"
+    //remember that we are trying to convert 2D nsole (Ctrl+Sx and y movement to 3d space, so the "z"
     //direction is always into the screen, but depending on camera orientation
     //x y and z of "screen space" probably != to world space counterparts
     Vector3 screen_direction_z = Vector3Subtract(c->cam3D.position, c->cam3D.target);

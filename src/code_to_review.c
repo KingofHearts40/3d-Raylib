@@ -1,6 +1,7 @@
 #include "main_function_entry.h"
 #include "global_constants.h"
-#include "world_edit.h"
+#include "raylib.h"
+#include "raymath.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -41,8 +42,10 @@ bool dragPreviewValid = false;
 Vector3 dragPreviewWorldPos = { 0.0f, 0.0f, 0.0f };
 
 
-// 1. ASSET UTILITY: Computes thumbnail data and updates the inventory array
+//given a model path, loads it, gets the max dimension to scale it, draws the thumbnail
+//stores the data in the inventory pointer/array
 void HandleAssetRegistration(const char* path, Camera3D thumbCamera, float uiTopY) {
+    //if no items, initializes capacity to 4, otherwise doubles capacity
     if (inventoryCount >= inventoryCapacity) {
         inventoryCapacity = (inventoryCapacity == 0) ? 4 : inventoryCapacity * 2;
         inventory = realloc(inventory, inventoryCapacity * sizeof(DraggableItem));
@@ -55,14 +58,17 @@ void HandleAssetRegistration(const char* path, Camera3D thumbCamera, float uiTop
     float width = box.max.x - box.min.x;
     float height = box.max.y - box.min.y;
     float depth = box.max.z - box.min.z;
+    //this next ternary gets the max dimension
     float maxDim = (width > height) ? ((width > depth) ? width : depth) : ((height > depth) ? height : depth);
     if (maxDim == 0.0f) maxDim = 1.0f;
-
+    //scale factor needed to scale the max dimension to 1 (is the inverse of the max dimmension)
     float scaleFactor = 1.0f / maxDim;
     Vector3 center = { box.min.x + width/2.0f, box.min.y + height/2.0f, box.min.z + depth/2.0f };
+    //need this offset to feed into DrawModelEX to move the model to the center of the camera view
     Vector3 centerOffset = { -center.x * scaleFactor, -center.y * scaleFactor + 0.5f, -center.z * scaleFactor };
 
-    // Bake thumbnail snapshot
+    // creates a 2D thumbnail of the model, has a baked in left offset of 20 pixels, and 10 pixels
+    //between each thumbnail
     RenderTexture2D thumbTarget = LoadRenderTexture((int)SLOT_WIDTH, (int)SLOT_HEIGHT);
     BeginTextureMode(thumbTarget);
         ClearBackground(BLANK); 
@@ -117,7 +123,7 @@ void UpdateInteractionState(Vector2 mousePos, Camera3D mainCamera, float uiTopY)
         }
     }
 
-    // Actively dragging an item
+    // Actively dragging an itemCamera3D c
     if (activeDragItem != NULL && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         activeDragItem->bounds.x = mousePos.x - (SLOT_WIDTH / 2.0f);
         activeDragItem->bounds.y = mousePos.y - (SLOT_HEIGHT / 2.0f);
