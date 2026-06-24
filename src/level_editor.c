@@ -1,11 +1,11 @@
 #include "main_function_entry.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "rlgl.h"
 #include "camera.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "level_editor.h"
 
 #define THUMB_SLOT_WIDTH 100
 #define THUMB_SLOT_HEIGHT 100
@@ -27,6 +27,8 @@ typedef struct Object{
 typedef struct World_Env_Obj{
     int obj_id;
     Vector3 pos;
+    BoundingBox bbox;
+    Color bbox_color;
 }World_Env_Obj;
 
 //array to hold model path
@@ -35,31 +37,8 @@ Object object_array[500];
 int loaded_models = 0;
 Object *selected_thumbnail = NULL;
 World_Env_Obj world_env_obj_arr[500];
+World_Env_Obj * selected_world_env_obj = NULL;
 int total_world_obj = 0;
-
-
-//function declarations:
-void getDroppedGLBFilePath();
-void storeObjectDataInArray(char * model_file, int id);
-void createThumbNailData(Object *o);
-void drawThumbNails();
-void scrollThumbNails(float delta);
-void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_width, int screen_height);
-void drawPreviewMesh3D(custom_cam3d *c, int height_3d_viewport);
-void placeMesh3DSpace(custom_cam3d *c, int viewport_h);
-void draw3DViewportMeshes();
-void printFilePathToScreen();
-void draw2dUIForThumbnails(int screen_height_ui);
-bool getMouseCollisionRec2DScreen(int screen_height_ui);
-bool getMouseCollisionRec3Dscreen(int screen_height_3d);
-Vector3 getMouse3dDirection(custom_cam3d *c);
-Vector3 convertMousePos3DSpace(custom_cam3d *c, int height_3d_viewport);
-void pickThumbNail(int screen_height_ui);
-void deselectThumbnail();
-void UI2DControls(int screen_height_ui);
-void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam);
-void freeModelPathArray();
-void freeObjectData();
 
 //actual functions
 
@@ -228,15 +207,19 @@ void drawPreviewMesh3D(custom_cam3d *c, int height_3d_viewport){
 
 //place 3d object in the viewport
 void placeMesh3DSpace(custom_cam3d *c, int viewport_h){
+    Vector3 pos = convertMousePos3DSpace(c, viewport_h);
+    createWorldEnvObj(pos);
+}
+
+void createWorldEnvObj(Vector3 pos){
     if(!selected_thumbnail) return;
 
     world_env_obj_arr[total_world_obj].obj_id = selected_thumbnail->id;
-    world_env_obj_arr[total_world_obj].pos = convertMousePos3DSpace(c, viewport_h);
-    total_world_obj++;
-}
-
-void createWorldEnvObj(Object * o){
-    
+    world_env_obj_arr[total_world_obj].pos = pos;
+    world_env_obj_arr[total_world_obj].bbox = GetModelBoundingBox(selected_thumbnail->model);
+    world_env_obj_arr[total_world_obj].bbox_color = BLACK;
+    updateWorldMeshBBox(&world_env_obj_arr[total_world_obj]);
+    total_world_obj++;   
 }
 
 //draw the 3d objects placed in the viewport
@@ -246,7 +229,17 @@ void draw3DViewportMeshes(){
         Vector3 pos = world_env_obj_arr[i].pos;
 
         DrawModel(object_array[index].model, pos, 1.0f, WHITE);
+        drawViewportMeshBBox(&world_env_obj_arr[i]);
     }
+}
+
+void drawViewportMeshBBox(World_Env_Obj * w){
+    DrawBoundingBox(w->bbox, w->bbox_color);
+}
+
+void updateWorldMeshBBox(World_Env_Obj *w){
+    w->bbox.max = Vector3Add(w->bbox.max, w->pos);
+    w->bbox.min = Vector3Add(w->bbox.min, w->pos);
 }
 
 //debug purposes only
@@ -419,7 +412,7 @@ void freeObjectData(){
     }
 }
 
-int refactor_main(){
+int level_editor_main(){
 // Initialization
     //--------------------------------------------------------------------------------------
     int screen_width = 1280;

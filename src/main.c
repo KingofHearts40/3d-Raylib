@@ -4,7 +4,7 @@
 #include "player.h"
 #include "world_edit.h"
 #include "global_constants.h"
-#include "main_function_entry.h"
+#include "level_editor.h"
 
 
 //------------------------------------------------------------------------------------
@@ -12,7 +12,7 @@
 //------------------------------------------------------------------------------------
 int main(void)
 {
-    refactor_main();
+    level_editor_main();
 
     return 0;
 }
