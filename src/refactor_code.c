@@ -1,6 +1,7 @@
 #include "main_function_entry.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "rlgl.h"
 #include "camera.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,11 +24,19 @@ typedef struct Object{
     Color thumbnail_border_color;
 }Object;
 
+typedef struct World_Env_Obj{
+    int obj_id;
+    Vector3 pos;
+}World_Env_Obj;
+
 //array to hold model path
 char *model_path[500];
 Object object_array[500];
 int loaded_models = 0;
 Object *selected_thumbnail = NULL;
+World_Env_Obj world_env_obj_arr[500];
+int total_world_obj = 0;
+
 
 //function declarations:
 void getDroppedGLBFilePath();
@@ -36,11 +45,19 @@ void createThumbNailData(Object *o);
 void drawThumbNails();
 void scrollThumbNails(float delta);
 void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_width, int screen_height);
+void drawPreviewMesh3D(custom_cam3d *c, int height_3d_viewport);
+void placeMesh3DSpace(custom_cam3d *c, int viewport_h);
+void draw3DViewportMeshes();
 void printFilePathToScreen();
 void draw2dUIForThumbnails(int screen_height_ui);
 bool getMouseCollisionRec2DScreen(int screen_height_ui);
 bool getMouseCollisionRec3Dscreen(int screen_height_3d);
+Vector3 getMouse3dDirection(custom_cam3d *c);
+Vector3 convertMousePos3DSpace(custom_cam3d *c, int height_3d_viewport);
 void pickThumbNail(int screen_height_ui);
+void deselectThumbnail();
+void UI2DControls(int screen_height_ui);
+void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam);
 void freeModelPathArray();
 void freeObjectData();
 
@@ -183,14 +200,53 @@ void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_
     ClearBackground(RAYWHITE);
     Camera3D world_camera = {.position = (Vector3){0.0f,0.0f, 5.0f}, .fovy = 90,
                 .projection = CAMERA_PERSPECTIVE, .target = {0.0f, 0.0f, 0.0f}, .up ={0, 1, 0}};
+    
     BeginMode3D(camera->cam3D);
-    DrawCube(WorldCenter, 1, 1, 1, RED);
+    DrawCube(WorldCenter, 0.1f, 0.1f, 0.1f, RED);
+    draw3DViewportMeshes();
+    
+    if(getMouseCollisionRec3Dscreen(screen_height)){
+        drawPreviewMesh3D(camera, screen_height);
+    }
+
     EndMode3D();
     EndTextureMode();
 
     Rectangle srcRec = { 0.0f, 0.0f, (float)view_port.texture.width, -(float)view_port.texture.height};
     Rectangle destRec = { 0.0f, 0.0f, (float)screen_width, (float)screen_height};
     DrawTexturePro(view_port.texture, srcRec, destRec, (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+}
+
+//draw a preview of the selecte thumbnail mesh on the 3d Viewport
+void drawPreviewMesh3D(custom_cam3d *c, int height_3d_viewport){
+    if(selected_thumbnail == NULL) return; //can only draw Preview if a thumbnail is selected
+
+    Vector3 position = convertMousePos3DSpace(c, height_3d_viewport);
+
+    DrawModel(selected_thumbnail->model, position, 1, (Color){255, 255, 255, 100});
+}
+
+//place 3d object in the viewport
+void placeMesh3DSpace(custom_cam3d *c, int viewport_h){
+    if(!selected_thumbnail) return;
+
+    world_env_obj_arr[total_world_obj].obj_id = selected_thumbnail->id;
+    world_env_obj_arr[total_world_obj].pos = convertMousePos3DSpace(c, viewport_h);
+    total_world_obj++;
+}
+
+void createWorldEnvObj(Object * o){
+    
+}
+
+//draw the 3d objects placed in the viewport
+void draw3DViewportMeshes(){
+    for(int i = 0; i < total_world_obj; i++){
+        int index = world_env_obj_arr[i].obj_id;
+        Vector3 pos = world_env_obj_arr[i].pos;
+
+        DrawModel(object_array[index].model, pos, 1.0f, WHITE);
+    }
 }
 
 //debug purposes only
@@ -251,6 +307,41 @@ bool getMouseCollisionRec3Dscreen(int screen_height_3d){
     
 }
 
+//gets the mouse direction in 3D space, might delete, not sure what use atm
+//coould be useful for first person camera work
+Vector3 getMouse3dDirection(custom_cam3d *c){
+    Ray r = GetMouseRay(GetMousePosition(), c->cam3D);
+    return(r.direction);
+}
+
+//converts camera position, target, and the mouse position to a 3D vector, needs viewport size
+//to correct for the fact that the whole screen isn't the viewport
+Vector3 convertMousePos3DSpace(custom_cam3d *c, int height_3d_viewport){
+    Vector2 current_mouse_pos = GetMousePosition();
+    float distance = Vector3Distance(c->cam3D.position, c->cam3D.target);
+    float screen_height = height_3d_viewport;
+    float screen_width = GetScreenWidth();
+ 
+    float world_height_at_distance = 2.0f * distance * tanf(c->cam3D.fovy*DEG2RAD/2.0f);
+    float pixel_to_world_scale = world_height_at_distance / screen_height;
+
+    //since we are moving relative to the camera target, we can use that as reference
+    // //top left is 0, 0 bottom right is Screenwidth, ScreenHeight
+    Vector2 center_screen = {.x = screen_width/2, .y = screen_height/2}; // {this is where target of cam is}
+
+    //pixels on screen * conversion factor to 3D world distance
+    float x_offcenter = (current_mouse_pos.x - center_screen.x) * pixel_to_world_scale;
+    float y_offcenter = (current_mouse_pos.y - center_screen.y) * pixel_to_world_scale;
+
+    Vector3 x_pos_from_cam_target = Vector3Scale(c->x_axis, x_offcenter);
+    Vector3 y_pos_from_cam_target = Vector3Scale(c->cam3D.up, y_offcenter);
+
+    Vector3 mouse_pos_3d = Vector3Add(c->cam3D.target, x_pos_from_cam_target);
+    mouse_pos_3d = Vector3Subtract(mouse_pos_3d, y_pos_from_cam_target);
+
+    return mouse_pos_3d;
+}
+
 //code to select a thumbnail
 void pickThumbNail(int screen_height_ui){
     if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
@@ -269,6 +360,46 @@ void pickThumbNail(int screen_height_ui){
                 break; //mouse can only hit one possible thumbnail at a time
             }
         }
+    }
+}
+
+void deselectThumbnail(){
+    if(selected_thumbnail) {
+        selected_thumbnail->thumbnail_border_color = LIGHTGRAY;
+        selected_thumbnail = NULL; 
+    }
+
+}
+
+//UI controls for keyboard and mouse
+void UI2DControls(int screen_height_ui){
+    if(!getMouseCollisionRec2DScreen(screen_height_ui)) return;
+
+    if(GetMouseWheelMove()){
+            scrollThumbNails(GetMouseWheelMove());
+        }
+
+    pickThumbNail(screen_height_ui);
+}
+
+//Viewport controls for the 3D display
+void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam){
+    if (!getMouseCollisionRec3Dscreen(screen_height_3d)) return;   
+
+    if(IsMouseButtonDown(MOUSE_MIDDLE_BUTTON) && !IsKeyDown(KEY_LEFT_SHIFT)){
+            rotateCameraAroundCurrentTarget(world_cam);
+        }
+
+    if(IsMouseButtonDown(MOUSE_MIDDLE_BUTTON) && IsKeyDown(KEY_LEFT_SHIFT)){
+            MoveCameraPos(world_cam);
+        }
+    
+    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+       placeMesh3DSpace(world_cam, screen_height_3d);
+    }
+
+    if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+        deselectThumbnail();
     }
 }
 
@@ -310,31 +441,19 @@ int refactor_main(){
         //Game logic here
         getDroppedGLBFilePath();
 
-        if(GetMouseWheelMove()){
-            scrollThumbNails(GetMouseWheelMove());
-        }
+        UI2DControls(screen_height_ui);
+        ViewPort3DControls(screen_height_3d, &world_cam);
 
-        if(IsMouseButtonDown(MOUSE_MIDDLE_BUTTON) && !IsKeyDown(KEY_LEFT_SHIFT) && getMouseCollisionRec3Dscreen(screen_height_3d)){
-            rotateCameraAroundCurrentTarget(&world_cam);
-        }
-
-        if(IsMouseButtonDown(MOUSE_MIDDLE_BUTTON) && IsKeyDown(KEY_LEFT_SHIFT) && getMouseCollisionRec3Dscreen(screen_height_3d)){
-            MoveCameraPos(&world_cam);
-        }
-
-        pickThumbNail(screen_height_ui);
-
-        
         //Drawing logic here
         BeginDrawing();
         ClearBackground(WHITE);
+        
         draw3DViewPort(view_port_3d, &world_cam, screen_width, screen_height_3d);
         draw2dUIForThumbnails(screen_height_ui);
         drawThumbNails();
         DrawText(TextFormat("Camera x: %f y: %f z: %f", world_cam.cam3D.position.x, world_cam.cam3D.position.y, world_cam.cam3D.position.z), 10, 10, 10, RED);
-        printFilePathToScreen();
+        getMouse3dDirection(&world_cam);
         EndDrawing();
-
     }
 
     //unload from GPU and free other data
