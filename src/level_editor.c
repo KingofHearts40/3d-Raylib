@@ -81,6 +81,120 @@ void getDroppedGLBFilePath(){
     UnloadDroppedFiles(files);
 }
 
+int saveModelSourcesArray(){
+    FILE *save_model_source_file = fopen("../save_data/save_model_data.bin", "w");
+    if(save_model_source_file == NULL){
+        printf("Failed to open file");
+        return -1;
+    }
+
+    fprintf(save_model_source_file, "%d\n", loaded_models);
+    
+    for(int i = 0; i < loaded_models; i++){
+        fprintf(save_model_source_file, "%s\n", model_path[i]);
+    }
+
+    fclose(save_model_source_file);
+    return 0;
+}
+
+int loadModelSourceArray(){
+    FILE *save_model_source_file = fopen("../save_data/save_model_data.bin", "r");
+    if(save_model_source_file == NULL){
+        printf("Unable to find save data");
+        return -1;
+    }
+
+    fscanf(save_model_source_file, "%d\n", &loaded_models);
+    
+    int buffer_size;
+    char buffer[buffer_size];
+    for(int i = 0; i < loaded_models; i++){
+        if(fgets(buffer, sizeof(buffer), save_model_source_file)){
+            buffer[strcspn(buffer, "\n")] = '\0';
+            model_path[i] = (char*)malloc(sizeof(char) * buffer_size);
+            //successful malloc check
+            if(model_path[i] != NULL){
+                strncpy(model_path[i], buffer, buffer_size-1);
+                model_path[i][buffer_size] = '\0';
+            }
+            //if it fails
+            else if(!model_path[i]){
+                printf("failed to allocate model_path data");
+                return -1;
+            }           
+        }
+    }
+
+    fclose(save_model_source_file);
+    return 0;    
+}
+
+void loadObjectArray(){
+    for(int i = 0; i < loaded_models; i++){
+        storeObjectDataInArray(model_path[i], i);
+    }
+}
+
+int save3DWorldData(){
+    FILE *world3D = fopen("../save_data/world3d.sav", "w");
+
+    if(!world3D) return -1; //failed to get a file to write to
+
+    fprintf(world3D, "%d\n", total_world_obj);
+
+    World_Env_Obj *save_obj = &world_env_obj_arr[0];
+
+    for(int i = 0; i < total_world_obj; i++){
+        fprintf(world3D, 
+            "obj_id: %d, "
+            "pos: {%f, %f, %f} "
+            "Box Color: {%u, %u, %u, %u} "
+            "Box Max Vec3{%f, %f, %f} "
+            "Box Min Vec3{%f, %f, %f}\n",             
+            save_obj->obj_id, 
+            save_obj->pos.x, save_obj->pos.y, save_obj->pos.z,
+            save_obj->bbox_color.r, save_obj->bbox_color.g, save_obj->bbox_color.b, save_obj->bbox_color.a,
+            save_obj->bbox.max.x, save_obj->bbox.max.y, save_obj->bbox.max.z,
+            save_obj->bbox.min.x, save_obj->bbox.min.y, save_obj->bbox.min.z          
+        );
+
+        save_obj++;
+    }
+
+    fclose(world3D);
+    return 0;
+}
+
+int load3DWorldData(){
+    FILE *world3D = fopen("../save_data/world3d.sav", "r");
+    if(!world3D) return -1;
+
+    fscanf(world3D, "%d\n", &total_world_obj);
+
+    World_Env_Obj *save_obj = &world_env_obj_arr[0];
+
+    for(int i = 0; i<total_world_obj; i++){
+        fscanf(world3D,
+            "obj_id: %d, "
+            "pos: {%f, %f, %f} "
+            "Box Color: {%u, %u, %u, %u} "
+            "Box Max Vec3{%f, %f, %f} "
+            "Box Min Vec3{%f, %f, %f}\n",             
+            &save_obj->obj_id, 
+            &save_obj->pos.x, &save_obj->pos.y, &save_obj->pos.z,
+            &save_obj->bbox_color.r, &save_obj->bbox_color.g, &save_obj->bbox_color.b, &save_obj->bbox_color.a,
+            &save_obj->bbox.max.x, &save_obj->bbox.max.y, &save_obj->bbox.max.z,
+            &save_obj->bbox.min.x, &save_obj->bbox.min.y, &save_obj->bbox.min.z             
+         );
+
+         save_obj++; //pointer math, move to next array pos
+    }
+
+    fclose(world3D);
+    return 0;
+}
+
 //stores model_data into object_array
 void storeObjectDataInArray(char * model_file, int id){
     Object o;
@@ -470,16 +584,20 @@ void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam){
         moveSelectedViewportModel(world_cam, screen_height_3d);
     }
 
-    if(IsMouseButtonUp(MOUSE_BUTTON_LEFT)){
-        deselectViewportModel();
-    }
-
     if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
         deselectThumbnail();
     }
 
-    if(IsKeyPressed(KEY_G) && selected_world_env_obj){
-        moveSelectedViewportModel(world_cam, screen_height_3d);    
+    if(IsKeyPressed(KEY_S)){
+        saveModelSourcesArray();
+        save3DWorldData();
+    }
+
+    if(IsKeyPressed(KEY_L)){
+        loadModelSourceArray();
+        loadObjectArray();//need to reload object array with the model source or bad things happen
+        //since both arrays use the loaded_model variable currently
+        load3DWorldData();
     }
 }
 
@@ -532,7 +650,6 @@ int level_editor_main(){
         draw2dUIForThumbnails(screen_height_ui);
         drawThumbNails();
         DrawText(TextFormat("Camera x: %f y: %f z: %f", world_cam.cam3D.position.x, world_cam.cam3D.position.y, world_cam.cam3D.position.z), 10, 10, 10, RED);
-        getMouse3dDirection(&world_cam);
         EndDrawing();
     }
 

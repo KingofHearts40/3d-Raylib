@@ -16,12 +16,14 @@
 #define THUMB_SLOT_SPACING 110
 
 typedef struct Object Object;
-
 typedef struct World_Env_Obj World_Env_Obj;
 
-//function declarations:
-
 void getDroppedGLBFilePath();
+int saveModelSourcesArray();
+int loadModelSourceArray();
+void loadObjectArray();
+int save3DWorldData();
+int load3DWorldData();
 void storeObjectDataInArray(char * model_file, int id);
 void createThumbNailData(Object *o);
 void drawThumbNails();

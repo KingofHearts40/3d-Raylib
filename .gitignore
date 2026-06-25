@@ -9,3 +9,5 @@ model3d/humanoid.blend
 .gitignore
 model3d/humanoid.glb
 model3d/humanoid.blend1
+save_data/save_model_data.bin
+save_data/world3d.sav
