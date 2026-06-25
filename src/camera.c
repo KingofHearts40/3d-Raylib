@@ -16,6 +16,7 @@ custom_cam3d Init3dCamera(){
     camera.pitch = 0.0f;
     camera.yaw = 0.0f;
     camera.sensitivity = LOOK_SENSITIVITY;
+    camera.min_zoom = 2.0f;
     camera.max_zoom = 10.0f;
 
     float initial_clamp_y = 89.0f * DEG2RAD;
@@ -40,6 +41,11 @@ void setCameraPosition(custom_cam3d * camera, Vector3 pos){
 //function to change fovy
 void setCameraFovy(custom_cam3d *camera, float fovy){
     camera->cam3D.fovy = fovy;
+}
+
+void setCameraZoomParam(custom_cam3d *c, float min_zoom, float max_zoom){
+    c->min_zoom = min_zoom;
+    c->max_zoom = max_zoom;    
 }
 
 //uses mouse movement to rotate the camera
@@ -113,7 +119,7 @@ void zoomCamera(custom_cam3d * camera, float zoom){
     float distance = Vector3Length(forward);
 
     distance += zoom;
-    distance = Clamp(distance, 2.0f, camera->max_zoom);
+    distance = Clamp(distance, camera->min_zoom, camera->max_zoom);
 
     Vector3 new_camera_pos = Vector3Add(camera->cam3D.target, Vector3Scale(Vector3Normalize(forward), distance));
     camera->cam3D.position = new_camera_pos;

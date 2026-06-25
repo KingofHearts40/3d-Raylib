@@ -149,7 +149,7 @@ int save3DWorldData(){
         fprintf(world3D, 
             "obj_id: %d, "
             "pos: {%f, %f, %f} "
-            "Box Color: {%u, %u, %u, %u} "
+            "Box Color: {%hhu, %hhu, %hhu, %hhu} "
             "Box Max Vec3{%f, %f, %f} "
             "Box Min Vec3{%f, %f, %f}\n",             
             save_obj->obj_id, 
@@ -178,7 +178,7 @@ int load3DWorldData(){
         fscanf(world3D,
             "obj_id: %d, "
             "pos: {%f, %f, %f} "
-            "Box Color: {%u, %u, %u, %u} "
+            "Box Color: {%hhu, %hhu, %hhu, %hhu} "
             "Box Max Vec3{%f, %f, %f} "
             "Box Min Vec3{%f, %f, %f}\n",             
             &save_obj->obj_id, 
@@ -584,6 +584,11 @@ void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam){
         moveSelectedViewportModel(world_cam, screen_height_3d);
     }
 
+    if(GetMouseWheelMove()){
+        float delta = GetMouseWheelMove();
+        zoomCamera(world_cam, delta);
+    }
+
     if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
         deselectThumbnail();
     }
@@ -629,6 +634,7 @@ int level_editor_main(){
     RenderTexture2D view_port_3d = LoadRenderTexture(screen_width, screen_height_3d);
     custom_cam3d world_cam = Init3dCamera();
     setCameraPosition(&world_cam, (Vector3){0,0,5});
+    setCameraZoomParam(&world_cam, 0.2f, 100.0f);
     
     SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------

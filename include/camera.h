@@ -20,6 +20,7 @@ typedef struct custom_cam3d {
     float clamp_y;
     float clamp_x;
     float sensitivity;
+    float min_zoom;
     float max_zoom;
     Vector3 x_axis;
 }custom_cam3d;
@@ -29,6 +30,7 @@ custom_cam3d Init3dCamera();
 void setCameraTarget(custom_cam3d *camera, Vector3 target);
 void setCameraPosition(custom_cam3d * camera, Vector3 pos);
 void setCameraFovy(custom_cam3d *camera, float fovy);
+void setCameraZoomParam(custom_cam3d *c, float min_zoom, float max_zoom);
 void rotateCameraAroundCurrentTarget(custom_cam3d * camera);
 void MoveCameraPos(custom_cam3d *c);
 Vector3 getCameraDirectionX(custom_cam3d *c);
