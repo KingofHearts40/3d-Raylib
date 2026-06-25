@@ -110,6 +110,13 @@ int loadModelSourceArray(){
     int buffer_size;
     char buffer[buffer_size];
     for(int i = 0; i < loaded_models; i++){
+        //if we've previously loaded up data, we need to free it before new malloc
+        //to avoid memory leak
+        if(model_path[i]){
+            free(model_path[i]);
+            model_path[i] = NULL;
+        }
+
         if(fgets(buffer, sizeof(buffer), save_model_source_file)){
             buffer[strcspn(buffer, "\n")] = '\0';
             model_path[i] = (char*)malloc(sizeof(char) * buffer_size);
@@ -131,6 +138,8 @@ int loadModelSourceArray(){
 }
 
 void loadObjectArray(){
+    freeObjectData(); //get rid of old data if previously written
+
     for(int i = 0; i < loaded_models; i++){
         storeObjectDataInArray(model_path[i], i);
     }
@@ -517,8 +526,9 @@ void deselectViewportModel(){
 
 //moves the model around in 3d space with the mouse movement when active
 void moveSelectedViewportModel(custom_cam3d *c, float viewport_3d_h){
+    if(selected_thumbnail) deselectViewportModel(); //distance formula requires selected_world_env
+    //so if gets past the next line and then deselect, we seg_fault
     if(!selected_world_env_obj) return;
-    if(selected_thumbnail) deselectViewportModel();
     float delta_x = GetMouseDelta().x, delta_y = GetMouseDelta().y;
     float distance = Vector3Distance(c->cam3D.position, selected_world_env_obj->pos);
     float screen_height = viewport_3d_h;
@@ -613,12 +623,24 @@ void freeModelPathArray(){
     }
 }
 
+void unloadObjectModelTextures(Object * o){
+    for(int j = 0; j < o->model.materialCount; j++){
+        //texture.id = 0 is OPENGL default (black), texture.id 1 is a raylib default
+        //if you accidently free the id = 1, it's going to mess up all assets with solid colors
+        //hence the check for texture.id > 1
+        if(o->model.materials[j].maps[MATERIAL_MAP_DIFFUSE].texture.id > 1){
+            UnloadTexture(o->model.materials[j].maps[MATERIAL_MAP_DIFFUSE].texture);
+        }
+    }
+}
+
 //unloads model data and model animations
 void freeObjectData(){
     for(int i = 0; i< loaded_models; i++){
         UnloadModelAnimations(object_array[i].animations, object_array[i].animation_num);
+        UnloadRenderTexture(object_array[i].thumbnail);      
+        unloadObjectModelTextures(&object_array[i]);
         UnloadModel(object_array[i].model);
-        UnloadRenderTexture(object_array[i].thumbnail);
     }
 }
 
@@ -636,7 +658,7 @@ int level_editor_main(){
     setCameraPosition(&world_cam, (Vector3){0,0,5});
     setCameraZoomParam(&world_cam, 0.2f, 100.0f);
     
-    SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
+    SetTargetFPS(300);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -656,6 +678,7 @@ int level_editor_main(){
         draw2dUIForThumbnails(screen_height_ui);
         drawThumbNails();
         DrawText(TextFormat("Camera x: %f y: %f z: %f", world_cam.cam3D.position.x, world_cam.cam3D.position.y, world_cam.cam3D.position.z), 10, 10, 10, RED);
+        DrawFPS(1000, 20);
         EndDrawing();
     }
 

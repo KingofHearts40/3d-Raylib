@@ -50,6 +50,7 @@ void updateWorldObjectPos3D(World_Env_Obj *w, Vector3 new_pos);
 void UI2DControls(int screen_height_ui);
 void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam);
 void freeModelPathArray();
+void unloadObjectModelTextures(Object * o);
 void freeObjectData();
 
 int level_editor_main();
