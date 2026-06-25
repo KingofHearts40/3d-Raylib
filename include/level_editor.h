@@ -43,7 +43,7 @@ Vector3 getMouse3dDirection(custom_cam3d *c);
 Vector3 convertMousePos3DSpace(custom_cam3d *c, int height_3d_viewport);
 void pickThumbNail(int screen_height_ui);
 void deselectThumbnail();
-void pickViewportModel(custom_cam3d * c);
+void pickViewportModel(custom_cam3d * c, int screen_height_3d);
 void deselectViewportModel();
 void moveSelectedViewportModel(custom_cam3d *c, float viewport_3d_h);
 void updateWorldObjectPos3D(World_Env_Obj *w, Vector3 new_pos);

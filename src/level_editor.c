@@ -488,11 +488,16 @@ void deselectThumbnail(){
 }
 
 //select the closest viewport model
-void pickViewportModel(custom_cam3d * c){
+void pickViewportModel(custom_cam3d * c, int screen_height_3d){
 //if thumbnail is selected, we are placing objects in the 3D view port so don't select one to move  
     if (selected_thumbnail) return;
 
     Ray mouse_ray = GetMouseRay(GetMousePosition(), c->cam3D);
+    Vector3 mouse3Dpos = convertMousePos3DSpace(c, screen_height_3d);
+    //math to correct mouse ray direction for the fact that we aren't using the full screen
+    Vector3 corrected_direction = Vector3Normalize(Vector3Subtract(mouse3Dpos, c->cam3D.position));
+    mouse_ray.direction = corrected_direction;
+
     World_Env_Obj *hit_world_env_obj = NULL; 
     //placeholder pointer so if we don't hit anything, we deselect active model
 
@@ -514,6 +519,11 @@ void pickViewportModel(custom_cam3d * c){
                 selected_world_env_obj = &world_env_obj_arr[i];
                 selected_world_env_obj->bbox_color = RED;   
             }
+        }
+
+        //need a case for if the model is selected, but the ray missed it this time
+        else if(!collision.hit && selected_world_env_obj == &world_env_obj_arr[i]){
+            deselectViewportModel(); //it's selected but the click didn't hit it this time
         }
 
         else if(hit_world_env_obj == NULL){
@@ -592,7 +602,7 @@ void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam){
     
     if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
        placeMesh3DSpace(world_cam, screen_height_3d);
-       pickViewportModel(world_cam);  
+       pickViewportModel(world_cam, screen_height_3d);  
     }
 
     if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
@@ -663,7 +673,7 @@ int level_editor_main(){
     setCameraPosition(&world_cam, (Vector3){0,0,5});
     setCameraZoomParam(&world_cam, 0.2f, 100.0f);
     
-    SetTargetFPS(300);                   // Set our game to run at 60 frames-per-second
+    SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     // Main game loop
