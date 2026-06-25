@@ -52,6 +52,8 @@ void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam);
 void freeModelPathArray();
 void unloadObjectModelTextures(Object * o);
 void freeObjectData();
+Shader createInfiniteGridShader();
+void drawInfiniteGrid(Shader s);
 
 int level_editor_main();
 

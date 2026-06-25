@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "level_editor.h"
+#include "rlgl.h"
 
 #define THUMB_SLOT_WIDTH 100
 #define THUMB_SLOT_HEIGHT 100
@@ -39,8 +40,6 @@ Object *selected_thumbnail = NULL;
 World_Env_Obj world_env_obj_arr[1500];
 World_Env_Obj * selected_world_env_obj = NULL;
 int total_world_obj = 0;
-
-//actual functions
 
 //stores the GLBFilePath into the model_path array
 void getDroppedGLBFilePath(){
@@ -303,7 +302,9 @@ void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_
     Camera3D world_camera = {.position = (Vector3){0.0f,0.0f, 5.0f}, .fovy = 90,
                 .projection = CAMERA_PERSPECTIVE, .target = {0.0f, 0.0f, 0.0f}, .up ={0, 1, 0}};
     
+    Shader grid = createInfiniteGridShader();
     BeginMode3D(camera->cam3D);
+    drawInfiniteGrid(grid);
     DrawCube(WorldCenter, 0.1f, 0.1f, 0.1f, RED);
     draw3DViewportMeshes();
     
@@ -313,6 +314,7 @@ void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_
 
     EndMode3D();
     EndTextureMode();
+    UnloadShader(grid);
 
     Rectangle srcRec = { 0.0f, 0.0f, (float)view_port.texture.width, -(float)view_port.texture.height};
     Rectangle destRec = { 0.0f, 0.0f, (float)screen_width, (float)screen_height};
@@ -611,7 +613,7 @@ void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam){
 
     if(GetMouseWheelMove()){
         float delta = GetMouseWheelMove();
-        zoomCamera(world_cam, delta);
+            zoomCamera(world_cam, delta);
     }
 
     if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
@@ -657,6 +659,35 @@ void freeObjectData(){
         unloadObjectModelTextures(&object_array[i]);
         UnloadModel(object_array[i].model);
     }
+}
+
+Shader createInfiniteGridShader(){
+    Shader gridShader = LoadShader("../shaders/infinite_grid.vs","../shaders/infinite_grid.fs");
+
+    float gridSize = 1.0f;
+    Vector4 gridColor = {0.8f,0.8f,0.8f,1.0f};
+    Vector4 bgColor = {0.1f,0.1f,0.1f,1.0f};
+
+    SetShaderValue(gridShader, GetShaderLocation(gridShader, "gridSize"), &gridSize, SHADER_UNIFORM_FLOAT);
+
+    SetShaderValue( gridShader,GetShaderLocation(gridShader, "gridColor"), &gridColor, SHADER_UNIFORM_VEC4);
+
+    SetShaderValue( gridShader, GetShaderLocation(gridShader, "backgroundColor"), &bgColor, SHADER_UNIFORM_VEC4);
+
+    return gridShader;
+}
+
+void drawInfiniteGrid(Shader s){
+
+    rlDisableBackfaceCulling();
+
+    BeginShaderMode(s);
+
+    DrawPlane((Vector3){0,0,0}, (Vector2){10000,10000},WHITE);
+
+    EndShaderMode();
+
+    rlEnableBackfaceCulling();
 }
 
 int level_editor_main(){
