@@ -36,7 +36,7 @@ char *model_path[500];
 Object object_array[500];
 int loaded_models = 0;
 Object *selected_thumbnail = NULL;
-World_Env_Obj world_env_obj_arr[500];
+World_Env_Obj world_env_obj_arr[1500];
 World_Env_Obj * selected_world_env_obj = NULL;
 int total_world_obj = 0;
 
@@ -491,28 +491,33 @@ void deselectThumbnail(){
 void pickViewportModel(custom_cam3d * c){
 //if thumbnail is selected, we are placing objects in the 3D view port so don't select one to move  
     if (selected_thumbnail) return;
-    //if there is an active world_obj and this function is called we unselect it and look for new
-    if(selected_world_env_obj){
-        deselectViewportModel();
-    }
 
     Ray mouse_ray = GetMouseRay(GetMousePosition(), c->cam3D);
+    World_Env_Obj *hit_world_env_obj = NULL; 
+    //placeholder pointer so if we don't hit anything, we deselect active model
 
     for(int i = 0; i < total_world_obj; i++){
         RayCollision collision = GetRayCollisionBox(mouse_ray, world_env_obj_arr[i].bbox);
         //to avoid accidently dereferencing NULL ptr
         if(collision.hit && selected_world_env_obj == NULL){
+            hit_world_env_obj = &world_env_obj_arr[i];
             selected_world_env_obj = &world_env_obj_arr[i];
             selected_world_env_obj->bbox_color = RED;
+            
         }
 
         else if(collision.hit && selected_world_env_obj){
             //check which object is closer, if current object closer, select it
             if(collision.distance < Vector3Distance(mouse_ray.position, selected_world_env_obj->pos)){
                 deselectViewportModel();
+                hit_world_env_obj = &world_env_obj_arr[i];
                 selected_world_env_obj = &world_env_obj_arr[i];
                 selected_world_env_obj->bbox_color = RED;   
             }
+        }
+
+        else if(hit_world_env_obj == NULL){
+            deselectViewportModel();
         }
     }
 }

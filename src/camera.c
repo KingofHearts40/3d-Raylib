@@ -79,7 +79,11 @@ void rotateCameraAroundCurrentTarget(custom_cam3d * camera){
 void MoveCameraPos(custom_cam3d *c){
     Vector2 delta_mouse = GetMouseDelta();
     //play around with this constant later
-    delta_mouse.y = delta_mouse.y  *GetFrameTime() / 3.0f;
+
+    //factor for correction:
+    float correction_fac = 1.0f/180.0f;
+
+    delta_mouse.y = delta_mouse.y  * correction_fac;
 
     //scale the up position by delta_mouse.y and then add it to both the position
     //and target to move the camera while keeping it looking in the same direction
@@ -89,7 +93,7 @@ void MoveCameraPos(custom_cam3d *c){
 
     Vector3 camera_x_axis_vector = getCameraDirectionX(c);
     c->x_axis = camera_x_axis_vector;
-    float delta_x = -delta_mouse.x * GetFrameTime() / 3.0f; //negative needed to move correct direction
+    float delta_x = -delta_mouse.x * correction_fac; //negative needed to move correct direction
     
     Vector3 change_pos_x = Vector3Scale(camera_x_axis_vector, delta_x);
     c->cam3D.position = Vector3Add(c->cam3D.position, change_pos_x);
