@@ -364,6 +364,80 @@ void deselectThumbnail(){
 
 }
 
+//select the closest viewport model
+void pickViewportModel(custom_cam3d * c){
+//if thumbnail is selected, we are placing objects in the 3D view port so don't select one to move  
+    if (selected_thumbnail) return;
+    //if there is an active world_obj and this function is called we unselect it and look for new
+    if(selected_world_env_obj){
+        deselectViewportModel();
+    }
+
+    Ray mouse_ray = GetMouseRay(GetMousePosition(), c->cam3D);
+
+    for(int i = 0; i < total_world_obj; i++){
+        RayCollision collision = GetRayCollisionBox(mouse_ray, world_env_obj_arr[i].bbox);
+        //to avoid accidently dereferencing NULL ptr
+        if(collision.hit && selected_world_env_obj == NULL){
+            selected_world_env_obj = &world_env_obj_arr[i];
+            selected_world_env_obj->bbox_color = RED;
+        }
+
+        else if(collision.hit && selected_world_env_obj){
+            //check which object is closer, if current object closer, select it
+            if(collision.distance < Vector3Distance(mouse_ray.position, selected_world_env_obj->pos)){
+                deselectViewportModel();
+                selected_world_env_obj = &world_env_obj_arr[i];
+                selected_world_env_obj->bbox_color = RED;   
+            }
+        }
+    }
+}
+
+void deselectViewportModel(){
+    if(selected_world_env_obj){
+        selected_world_env_obj->bbox_color = BLACK;
+        selected_world_env_obj = NULL;
+    }    
+}
+
+//moves the model around in 3d space with the mouse movement when active
+void moveSelectedViewportModel(custom_cam3d *c, float viewport_3d_h){
+    if(!selected_world_env_obj) return;
+    if(selected_thumbnail) deselectViewportModel();
+    float delta_x = GetMouseDelta().x, delta_y = GetMouseDelta().y;
+    float distance = Vector3Distance(c->cam3D.position, selected_world_env_obj->pos);
+    float screen_height = viewport_3d_h;
+
+    //convert screen pixel to world space
+    float world_height_at_distance = 2.0f * distance * tanf(c->cam3D.fovy*DEG2RAD/2.0f);
+    float pixel_to_world_scale = world_height_at_distance / screen_height;
+    
+    delta_x *= pixel_to_world_scale;
+    delta_y *= pixel_to_world_scale;
+
+    Vector3 change_pos_x = Vector3Scale(c->x_axis, delta_x);
+    Vector3 change_pos_y = Vector3Scale(c->cam3D.up, delta_y);
+
+    Vector3 new_pos = Vector3Add(selected_world_env_obj->pos, change_pos_x);
+    new_pos = Vector3Subtract(new_pos, change_pos_y);
+
+    updateWorldObjectPos3D(selected_world_env_obj, new_pos);
+}
+
+//updates the position and the bounding box position for the world object
+void  updateWorldObjectPos3D(World_Env_Obj *w, Vector3 new_pos){
+    Vector3 last_pos = w->pos;
+    
+    //update player position to the provided Vec3
+    w->pos = new_pos;
+
+    //get the change in player position an add it to the boundingBox
+    Vector3 delta_pos = Vector3Subtract(new_pos, last_pos);
+    w->bbox.max = Vector3Add(w->bbox.max, delta_pos);
+    w->bbox.min = Vector3Add(w->bbox.min, delta_pos);
+}
+
 //UI controls for keyboard and mouse
 void UI2DControls(int screen_height_ui){
     if(!getMouseCollisionRec2DScreen(screen_height_ui)) return;
@@ -389,10 +463,23 @@ void ViewPort3DControls(int screen_height_3d, custom_cam3d * world_cam){
     
     if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
        placeMesh3DSpace(world_cam, screen_height_3d);
+       pickViewportModel(world_cam);  
+    }
+
+    if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+        moveSelectedViewportModel(world_cam, screen_height_3d);
+    }
+
+    if(IsMouseButtonUp(MOUSE_BUTTON_LEFT)){
+        deselectViewportModel();
     }
 
     if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
         deselectThumbnail();
+    }
+
+    if(IsKeyPressed(KEY_G) && selected_world_env_obj){
+        moveSelectedViewportModel(world_cam, screen_height_3d);    
     }
 }
 

@@ -180,6 +180,7 @@ void selectGameObject(Camera3D c){
 
             else{
                 if(rcol.distance < Vector3Distance(r.position, active_game_object->pos)){
+                    active_game_object->bbox_color = BLACK;
                     active_game_object = &game_object_storage[i];
                 }
             }
