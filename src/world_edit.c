@@ -238,7 +238,7 @@ void playActiveObjectAnim(int *current_frame, int *animation_num){
 
     if ((*animation_num) >= active_game_object->anim_count) (*animation_num) = 0;
     int anim = *animation_num;
-    int max_frame_count = active_game_object->animations[anim].keyframeCount;
+    int max_frame_count = active_game_object->animations[anim].frameCount;
     
     UpdateModelAnimation(active_game_object->model, active_game_object->animations[anim], *current_frame);
     (*current_frame)++;

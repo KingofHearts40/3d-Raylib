@@ -7,98 +7,83 @@ typedef enum UI_element_type{
     BACKGROUND_UI_ELEM
 }UI_element_type;
 
-typedef struct background_UI{
+typedef struct viewport_data{
     Rectangle bounds;
     Color color;
-}background_UI;
+}viewport_data;
 
-typedef struct data_holder{
-    void * pointer;
-    UI_element_type type;
-    size_t capacity;
-    size_t current_element;
-}data_holder;
+viewport_data * viewports = NULL;
+int viewport_memory = 0;
+int current_viewport_slot = 0;
 
-
-size_t data_element_type_size(data_holder *d){
-    switch (d->type)
-    {
-    case BACKGROUND_UI_ELEM:
-        return(sizeof(background_UI));
-        break;
-    
-    default:
-        break;
+void logError(char * file, char * error_message){
+    FILE * fptr = fopen(file, "w");
+    if(fptr){
+        fprintf(fptr, error_message);
     }
-}   
+    else{
+        printf("could not open file %s", file);
+    }
+    fclose(fptr);
+}
 
-void * allocate_data_pointer_memory(data_holder *d){
-    //get the size of the element stored in the void *
-    size_t bytes_needed = data_element_type_size(d);
-    void * temp_ptr = NULL;
-
-    if(d->capacity == 0){
-        temp_ptr = malloc(sizeof(bytes_needed) * 4);
-        if(temp_ptr == NULL){
-            FILE *fptr = fopen("../save_data/log_file.txt", "w");
-            if(fptr) fprintf(fptr, "Failed to malloc memory for UI");
-            fclose(fptr);
-            return NULL;
-        }
-        else {
-            d->capacity = 4;
-        }
+void addViewPortMemory(viewport_data **v){
+    char *log_file = "../save_data/log_file.txt";
+    if (*v == NULL){
+        *v = malloc(sizeof(viewport_data) * 4);
+            if (*v == NULL){
+            logError(log_file,"viewport malloc failed\n");  
+            }
+            else viewport_memory= 4;
     }
 
-    else if(d->current_element == d->capacity){
-        temp_ptr = realloc(d->pointer, bytes_needed * d->capacity * 2);
-        if(temp_ptr == NULL){
-            FILE *fptr = fopen("../save_data/log_file.txt", "w");
-            if(fptr) fprintf(fptr, "Failed to realloc memory for UI");
-            fclose(fptr);
-            return NULL;
+    else if(current_viewport_slot == viewport_memory && current_viewport_slot > 0){
+        void * temp_ptr = realloc(*v, sizeof(viewport_data) * viewport_memory * 2);
+        if(temp_ptr){
+            *v = temp_ptr;
+            viewport_memory *= 2;
         }
         else{
-            d->pointer = temp_ptr;
-            d->capacity *= 2;
+            logError(log_file, "realloc for view_port failed");
         }
-
     }
 
-    return temp_ptr;
 }
 
-void deallocate_all_pointer_elements(data_holder *d){
-    for(int i = 0; i < d->current_element; i++){
-        free(d[i].pointer);
+void deallocateViewPorts(){
+    free(viewports);
+}
+
+void createNewViewPort(){
+    addViewPortMemory(&viewports);
+
+    viewports[current_viewport_slot].bounds = (Rectangle){.height = 100, .width = 100, .x = 500, .y = 100};
+    viewports[current_viewport_slot].color = BLACK;
+    current_viewport_slot++;
+}
+
+void drawViewPorts(){
+    for(int i = 0; i < current_viewport_slot; i++){
+        DrawRectangleRec(viewports[i].bounds, viewports[i].color);
     }
 }
 
-void create_new_background_ui(data_holder * bg_ui){
-    if(bg_ui->type != BACKGROUND_UI_ELEM){
-        FILE *fptr = fopen("../save_data/log_file.txt", "w");
-        fprintf(fptr, "Attempted to create background, pointer is either empty or wrong type" );
-        fclose(fptr);
-        return;
+void updateViewportsPositions(Vector2 delta){
+    for(int i = 0; i < current_viewport_slot; i++){
+        if(CheckCollisionPointRec(GetMousePosition(), viewports[i].bounds)){
+            viewports[i].bounds.x += delta.x;
+            viewports[i].bounds.y += delta.y;
+            break; //if two overlap, this prevents moving them at the same time
+        }
     }
-    
-    bg_ui->pointer = allocate_data_pointer_memory(bg_ui);
-
-    background_UI ui = {.bounds.height = 100, .bounds.width = 100, .bounds.x = 100, 
-        .bounds.y = 100, .color = BLACK};
-    ((background_UI*)(bg_ui->pointer))[bg_ui->current_element] = ui;
-    bg_ui->current_element++;
 }
+
 
 int gui_main(){
     int layout_width = 1280;
     int layout_height = 720;
     int control_width = 200;
     int control_height = 720;
-
-    data_holder UI_elements = {.pointer = NULL, .capacity = 0, .current_element = 0, 
-    .type = BACKGROUND_UI_ELEM};
-
 
     Rectangle layout = {.width = layout_width, .height = layout_height, .x = 0, .y = 0};
     Rectangle control_panel = {.width = control_width, .height = control_height, .x = layout_width, .y = 0};
@@ -114,13 +99,16 @@ int gui_main(){
 
     while(!WindowShouldClose()){
         //game logic
-        create_new_background_ui(&UI_elements);
-
 
         if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && CheckCollisionPointRec(GetMousePosition(), button_rec)){
             button_rec.x += GetMouseDelta().x;
             button_rec.y += GetMouseDelta().y;
         }
+
+        if(IsMouseButtonDown(MOUSE_RIGHT_BUTTON)){
+            updateViewportsPositions(GetMouseDelta());               
+        }
+           
 
 
         //draw logic
@@ -129,16 +117,21 @@ int gui_main(){
         DrawRectangleRec(layout, YELLOW);
         DrawRectangleRec(control_panel, RED);
         if(GuiButton(button_rec, "test_button")){
-            show_message_box = true;            
+            show_message_box = true; 
+            createNewViewPort();           
         }
+
+        drawViewPorts();
         
-        if(show_message_box) GuiMessageBox(message_rec, "TEST", "Message", "b");
+        if(show_message_box) GuiMessageBox(message_rec, "TEST", "Number of new rectangles:", "b");
 
         EndDrawing();
     }
 
-    deallocate_all_pointer_elements(&UI_elements);
+
     //unloading code
+    
+    deallocateViewPorts();
 
     return 0;
 }
