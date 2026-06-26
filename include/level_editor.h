@@ -2,10 +2,6 @@
 #define LEVEL_EDITOR_H
 
 #include "raylib.h"
-
-#include "main_function_entry.h"
-#include "raylib.h"
-#include "raymath.h"
 #include "camera.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +24,7 @@ void storeObjectDataInArray(char * model_file, int id);
 void createThumbNailData(Object *o);
 void drawThumbNails();
 void scrollThumbNails(float delta);
-void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_width, int screen_height);
+void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_width, int screen_height, Shader s);
 void drawPreviewMesh3D(custom_cam3d *c, int height_3d_viewport);
 void draw3DViewportMeshes();
 void placeMesh3DSpace(custom_cam3d *c, int viewport_h);

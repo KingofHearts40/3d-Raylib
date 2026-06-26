@@ -1,6 +1,6 @@
-#include "main_function_entry.h"
 #include "raylib.h"
 #include "raymath.h"
+
 #include "camera.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -296,15 +296,14 @@ void scrollThumbNails(float delta){
     }
 }
 
-void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_width, int screen_height){
+void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_width, int screen_height, Shader s){
     BeginTextureMode(view_port);
     ClearBackground(RAYWHITE);
     Camera3D world_camera = {.position = (Vector3){0.0f,0.0f, 5.0f}, .fovy = 90,
                 .projection = CAMERA_PERSPECTIVE, .target = {0.0f, 0.0f, 0.0f}, .up ={0, 1, 0}};
     
-    Shader grid = createInfiniteGridShader();
     BeginMode3D(camera->cam3D);
-    drawInfiniteGrid(grid);
+    drawInfiniteGrid(s);
     DrawCube(WorldCenter, 0.1f, 0.1f, 0.1f, RED);
     draw3DViewportMeshes();
     
@@ -314,7 +313,7 @@ void draw3DViewPort(RenderTexture2D view_port, custom_cam3d *camera, int screen_
 
     EndMode3D();
     EndTextureMode();
-    UnloadShader(grid);
+
 
     Rectangle srcRec = { 0.0f, 0.0f, (float)view_port.texture.width, -(float)view_port.texture.height};
     Rectangle destRec = { 0.0f, 0.0f, (float)screen_width, (float)screen_height};
@@ -665,8 +664,8 @@ Shader createInfiniteGridShader(){
     Shader gridShader = LoadShader("../shaders/infinite_grid.vs","../shaders/infinite_grid.fs");
 
     float gridSize = 1.0f;
-    Vector4 gridColor = {0.8f,0.8f,0.8f,1.0f};
-    Vector4 bgColor = {0.1f,0.1f,0.1f,1.0f};
+    Vector4 gridColor = {0.8f,0.8f,0.8f,0.5f};
+    Vector4 bgColor = {0.1f,0.1f,0.1f,0.5f};
 
     SetShaderValue(gridShader, GetShaderLocation(gridShader, "gridSize"), &gridSize, SHADER_UNIFORM_FLOAT);
 
@@ -706,6 +705,7 @@ int level_editor_main(){
     
     SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
+    Shader grid = createInfiniteGridShader();
 
     // Main game loop
     while (!WindowShouldClose())        // Detect window close button or ESC key
@@ -720,7 +720,7 @@ int level_editor_main(){
         BeginDrawing();
         ClearBackground(WHITE);
         
-        draw3DViewPort(view_port_3d, &world_cam, screen_width, screen_height_3d);
+        draw3DViewPort(view_port_3d, &world_cam, screen_width, screen_height_3d, grid);
         draw2dUIForThumbnails(screen_height_ui);
         drawThumbNails();
         DrawText(TextFormat("Camera x: %f y: %f z: %f", world_cam.cam3D.position.x, world_cam.cam3D.position.y, world_cam.cam3D.position.z), 10, 10, 10, RED);
@@ -732,6 +732,7 @@ int level_editor_main(){
     freeModelPathArray();
     freeObjectData();
     UnloadRenderTexture(view_port_3d);
+    UnloadShader(grid);
 
     //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
