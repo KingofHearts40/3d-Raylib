@@ -47,7 +47,32 @@ void addViewPortMemory(viewport_data **v){
             logError(log_file, "realloc for view_port failed");
         }
     }
+}
 
+//this can be used to allocate memory for any ptr that has a tracking 
+//variable for max allocation and current pos
+//ptr needs to be cast: (void**)&myptr, use sizeof for second variable
+//don't forget & for 3rd variable
+void genericMemoryAlloc(void **ptr, size_t size_of, int *max_allocated, int current_used){
+    char *log_file = "../save_data/log_file.txt";
+    if (*ptr == NULL){
+        *ptr = malloc(size_of * 4);
+            if (*ptr == NULL){
+            logError(log_file,"malloc failed to provide memory\n");  
+            }
+            else *max_allocated = 4;
+    }
+
+    else if(current_used == (*max_allocated) && current_used > 0){
+        void * temp_ptr = realloc(*ptr, size_of * (*max_allocated) * 2);
+        if(temp_ptr){
+            *ptr = temp_ptr;
+            *max_allocated *= 2;
+        }
+        else{
+            logError(log_file, "realloc for view_port failed");
+        }
+    }
 }
 
 void deallocateViewPorts(){
@@ -55,7 +80,8 @@ void deallocateViewPorts(){
 }
 
 void createNewViewPort(){
-    addViewPortMemory(&viewports);
+    //addViewPortMemory(&viewports);
+    genericMemoryAlloc((void**)&viewports, sizeof(viewport_data), &viewport_memory, current_viewport_slot);
 
     viewports[current_viewport_slot].bounds = (Rectangle){.height = 100, .width = 100, .x = 500, .y = 100};
     viewports[current_viewport_slot].color = BLACK;
