@@ -130,7 +130,6 @@ void updateViewportsPositions(Vector2 delta){
     }
 }
 
-
 int gui_main(){
     int layout_width = 1280;
     int layout_height = 720;
@@ -146,19 +145,31 @@ int gui_main(){
 
     Rectangle button_rec = {.height = 100, .width = 100, .x = 100, .y = 100};
     Rectangle message_rec = {.height = 100, .width = 100, .x = 300, .y = 300};
+
+    Rectangle right_click_menu = {.height = 20, .width = 100, .x = 0, .y = 0};
+    const char* menu_items = "Copy;Paste;Delete";
+    int active_item = -1;
+    bool show_right_click_menu = false;
     
     bool show_message_box = false;
 
     while(!WindowShouldClose()){
         //game logic
 
-        if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && CheckCollisionPointRec(GetMousePosition(), button_rec)){
+        if(IsMouseButtonDown(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), button_rec)){
             button_rec.x += GetMouseDelta().x;
             button_rec.y += GetMouseDelta().y;
         }
 
-        if(IsMouseButtonDown(MOUSE_RIGHT_BUTTON)){
+        if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
             updateViewportsPositions(GetMouseDelta());               
+        }
+
+        if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+            Vector2 mousePos = GetMousePosition();
+            right_click_menu.x = mousePos.x;
+            right_click_menu.y = mousePos.y;
+            show_right_click_menu = true;
         }
            
 
@@ -176,6 +187,12 @@ int gui_main(){
         drawViewPorts();
         
         if(show_message_box) GuiMessageBox(message_rec, "TEST", "Number of new rectangles:", "b");
+        if (show_right_click_menu){
+            int toggle_show = GuiDropdownBox(right_click_menu, menu_items, &active_item, show_right_click_menu);
+            if (toggle_show){
+                show_right_click_menu = false;
+            } 
+        }
 
         EndDrawing();
     }
