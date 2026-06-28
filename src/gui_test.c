@@ -10,11 +10,12 @@ typedef enum UI_element_type{
 typedef struct viewport_data{
     Rectangle bounds;
     Color color;
+    Rectangle resize_toggle;
 }viewport_data;
 
 viewport_data * viewports = NULL;
-int viewport_memory = 0;
-int current_viewport_slot = 0;
+int viewport_capacity = 0;
+int viewport_length = 0;
 
 void logError(char * file, char * error_message){
     FILE * fptr = fopen(file, "w");
@@ -34,14 +35,14 @@ void addViewPortMemory(viewport_data **v){
             if (*v == NULL){
             logError(log_file,"viewport malloc failed\n");  
             }
-            else viewport_memory= 4;
+            else viewport_capacity= 4;
     }
 
-    else if(current_viewport_slot == viewport_memory && current_viewport_slot > 0){
-        void * temp_ptr = realloc(*v, sizeof(viewport_data) * viewport_memory * 2);
+    else if(viewport_length == viewport_capacity && viewport_length > 0){
+        void * temp_ptr = realloc(*v, sizeof(viewport_data) * viewport_capacity * 2);
         if(temp_ptr){
             *v = temp_ptr;
-            viewport_memory *= 2;
+            viewport_capacity *= 2;
         }
         else{
             logError(log_file, "realloc for view_port failed");
@@ -90,25 +91,41 @@ void deallocatePointer(void **ptr, int *capacity, int *length){
 
 void createNewViewPort(){
     //addViewPortMemory(&viewports);
-    genericMemoryAlloc((void**)&viewports, sizeof(viewport_data), &viewport_memory, current_viewport_slot);
+    genericMemoryAlloc((void**)&viewports, sizeof(viewport_data), &viewport_capacity, viewport_length);
 
-    viewports[current_viewport_slot].bounds = (Rectangle){.height = 100, .width = 100, .x = 500, .y = 100};
-    viewports[current_viewport_slot].color = BLACK;
-    current_viewport_slot++;
+    viewports[viewport_length].bounds = (Rectangle){.height = 100, .width = 100, .x = 500, .y = 100};
+    viewports[viewport_length].color = BLACK;
+
+    viewports[viewport_length].resize_toggle = (Rectangle){.height = 20, .width = 20, 
+        .x = viewports[viewport_length].bounds.x +viewports[viewport_length].bounds.width - 20, 
+        .y = viewports[viewport_length].bounds.y +viewports[viewport_length].bounds.height - 20};
+
+    viewport_length++;
 }
 
 void drawViewPorts(){
-    for(int i = 0; i < current_viewport_slot; i++){
+    for(int i = 0; i < viewport_length; i++){
         DrawRectangleRec(viewports[i].bounds, viewports[i].color);
+        DrawRectangleRec(viewports[i].resize_toggle, ORANGE);
     }
 }
 
 void updateViewportsPositions(Vector2 delta){
-    for(int i = 0; i < current_viewport_slot; i++){
+    for(int i = 0; i < viewport_length; i++){
         if(CheckCollisionPointRec(GetMousePosition(), viewports[i].bounds)){
-            viewports[i].bounds.x += delta.x;
-            viewports[i].bounds.y += delta.y;
+            if(!CheckCollisionPointRec(GetMousePosition(), viewports[i].resize_toggle)){
+                viewports[i].bounds.x += delta.x;
+                viewports[i].bounds.y += delta.y;
+                viewports[i].resize_toggle.x += GetMouseDelta().x;
+                viewports[i].resize_toggle.y += GetMouseDelta().y;    
             break; //if two overlap, this prevents moving them at the same time
+            }
+            else{
+                viewports[i].bounds.width += GetMouseDelta().x;
+                viewports[i].bounds.height += GetMouseDelta().y;
+                viewports[i].resize_toggle.x += GetMouseDelta().x;
+                viewports[i].resize_toggle.y += GetMouseDelta().y;                
+            }
         }
     }
 }
@@ -166,7 +183,7 @@ int gui_main(){
 
     //unloading code
     
-    deallocatePointer((void**)&viewports, &viewport_memory, &current_viewport_slot);
+    deallocatePointer((void**)&viewports, &viewport_capacity, &viewport_length);
 
     return 0;
 }
