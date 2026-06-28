@@ -189,6 +189,7 @@ int gui_main(){
         if(show_message_box) GuiMessageBox(message_rec, "TEST", "Number of new rectangles:", "b");
         if (show_right_click_menu){
             int toggle_show = GuiDropdownBox(right_click_menu, menu_items, &active_item, show_right_click_menu);
+            //GuiDropdownMenuBox returns 0 until left mouse button is clicked
             if (toggle_show){
                 show_right_click_menu = false;
             } 
