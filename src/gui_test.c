@@ -18,9 +18,9 @@ int viewport_capacity = 0;
 int viewport_length = 0;
 
 void logError(char * file, char * error_message){
-    FILE * fptr = fopen(file, "w");
+    FILE * fptr = fopen(file, "a");
     if(fptr){
-        fprintf(fptr, error_message);
+        fprintf(fptr, "%s", error_message);
     }
     else{
         printf("could not open file %s", file);
@@ -76,10 +76,12 @@ int genericMemoryAlloc(void **ptr, size_t size_of, int *capacity, int length){
             return 0;
         }
         else{
-            logError(log_file, "realloc for view_port failed");
+            logError(log_file, "realloc failed to resize requested data\n");
             return 2;
         }
     }
+
+    return 0;
 }
 
 void deallocatePointer(void **ptr, int *capacity, int *length){
@@ -91,7 +93,9 @@ void deallocatePointer(void **ptr, int *capacity, int *length){
 
 void createNewViewPort(){
     //addViewPortMemory(&viewports);
-    genericMemoryAlloc((void**)&viewports, sizeof(viewport_data), &viewport_capacity, viewport_length);
+    int success = genericMemoryAlloc((void**)&viewports, sizeof(viewport_data), &viewport_capacity, viewport_length);
+
+    if (success != 0) return;
 
     viewports[viewport_length].bounds = (Rectangle){.height = 100, .width = 100, .x = 500, .y = 100};
     viewports[viewport_length].color = BLACK;
@@ -153,6 +157,7 @@ int gui_main(){
     
     bool show_message_box = false;
 
+    SetTargetFPS(60);
     while(!WindowShouldClose()){
         //game logic
 
