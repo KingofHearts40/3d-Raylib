@@ -12,3 +12,6 @@ model3d/humanoid.blend1
 save_data/save_model_data.bin
 save_data/world3d.sav
 save_data/log_file.txt
+/build
+/out
+Cmakepresets.json
