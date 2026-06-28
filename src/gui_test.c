@@ -53,30 +53,39 @@ void addViewPortMemory(viewport_data **v){
 //variable for max allocation and current pos
 //ptr needs to be cast: (void**)&myptr, use sizeof for second variable
 //don't forget & for 3rd variable
-void genericMemoryAlloc(void **ptr, size_t size_of, int *max_allocated, int current_used){
+int genericMemoryAlloc(void **ptr, size_t size_of, int *capacity, int length){
     char *log_file = "../save_data/log_file.txt";
     if (*ptr == NULL){
         *ptr = malloc(size_of * 4);
             if (*ptr == NULL){
-            logError(log_file,"malloc failed to provide memory\n");  
+            logError(log_file,"malloc failed to provide memory\n");
+            return 1;  
             }
-            else *max_allocated = 4;
+            else{
+                *capacity = 4;
+                return 0;
+            }
     }
 
-    else if(current_used == (*max_allocated) && current_used > 0){
-        void * temp_ptr = realloc(*ptr, size_of * (*max_allocated) * 2);
+    else if(length == (*capacity) && length > 0){
+        void * temp_ptr = realloc(*ptr, size_of * (*capacity) * 2);
         if(temp_ptr){
             *ptr = temp_ptr;
-            *max_allocated *= 2;
+            *capacity *= 2;
+            return 0;
         }
         else{
             logError(log_file, "realloc for view_port failed");
+            return 2;
         }
     }
 }
 
-void deallocateViewPorts(){
-    free(viewports);
+void deallocatePointer(void **ptr, int *capacity, int *length){
+    free(*ptr);
+    *ptr = NULL;
+    *capacity = 0;
+    *length = 0;
 }
 
 void createNewViewPort(){
@@ -157,7 +166,7 @@ int gui_main(){
 
     //unloading code
     
-    deallocateViewPorts();
+    deallocatePointer((void**)&viewports, &viewport_memory, &current_viewport_slot);
 
     return 0;
 }
